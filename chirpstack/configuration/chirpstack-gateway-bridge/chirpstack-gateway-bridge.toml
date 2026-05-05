@@ -1,0 +1,15 @@
+[general]
+  log_level=4
+  marshaler="json"
+
+[backend.udp]
+  bind="0.0.0.0:1700"
+
+[integration.mqtt.auth.generic]
+  servers=[
+    "tcp://172.20.0.4:1883",
+  ]
+  client_id="chirpstack_bridge"
+  event_topic_template="eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+  state_topic_template="eu868/gateway/{{ .GatewayID }}/state/{{ .StateType }}"
+  command_topic_template="eu868/gateway/{{ .GatewayID }}/command/#"

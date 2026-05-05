@@ -1,0 +1,66 @@
+# ChirpStack LNS configuration
+
+[logging]
+  level="debug"
+
+[postgresql]
+  dsn="postgres://chirpstack:chirpstack@172.20.0.2/chirpstack?sslmode=disable"
+
+[redis]
+  servers=[
+    "redis://172.20.0.3/",
+  ]
+
+[network]
+  net_id="000000"
+  enabled_regions=["eu868"]
+
+[integration]
+  enabled=["mqtt"]
+
+  [integration.mqtt]
+    server="tcp://172.20.0.4:1883"
+    client_id="chirpstack_integration"
+
+[api]
+  bind="0.0.0.0:8080"
+
+[[regions]]
+  id="eu868"
+  common_name="EU868"
+
+  [[regions.network.extra_channels]]
+    frequency=867100000
+    min_dr=0
+    max_dr=5
+
+  [[regions.network.extra_channels]]
+    frequency=867300000
+    min_dr=0
+    max_dr=5
+
+  [[regions.network.extra_channels]]
+    frequency=867500000
+    min_dr=0
+    max_dr=5
+
+  [[regions.network.extra_channels]]
+    frequency=867700000
+    min_dr=0
+    max_dr=5
+
+  [[regions.network.extra_channels]]
+    frequency=867900000
+    min_dr=0
+    max_dr=5
+
+  [regions.gateway.backend]
+    type="mqtt"
+
+    [regions.gateway.backend.mqtt]
+      server="tcp://172.20.0.4:1883"
+      client_id="chirpstack_gateway_eu868"
+      event_topic_template="eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+      state_topic_template="eu868/gateway/{{ .GatewayID }}/state/{{ .StateType }}"
+      command_topic_template="eu868/gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
+      marshaler="json"

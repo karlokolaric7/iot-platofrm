@@ -1,0 +1,93 @@
+services:
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    command: ["-c", "/etc/chirpstack"]
+    restart: unless-stopped
+    volumes:
+      - ./configuration/chirpstack:/etc/chirpstack
+    depends_on:
+      - postgres
+      - redis
+      - mosquitto
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.5
+    ports:
+      - 8080:8080
+
+  chirpstack-rest-api:
+    image: chirpstack/chirpstack-rest-api:4
+    restart: unless-stopped
+    command: ["--server", "172.20.0.5:8080", "--bind", "0.0.0.0:8090", "--insecure"]
+    ports:
+      - 8090:8090
+    depends_on:
+      - chirpstack
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.6
+
+  # Map standard UDP port 1700 for Semtech UDP packets
+  chirpstack-gateway-bridge:
+    image: chirpstack/chirpstack-gateway-bridge:4
+    command: ["-c", "/etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml"]
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:1701:1700/udp"
+    volumes:
+      - ./configuration/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml:/etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml
+    depends_on:
+      - mosquitto
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.7
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    ports:
+      - 1883:1883
+    volumes:
+      - ./configuration/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.4
+
+  postgres:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=chirpstack
+      - POSTGRES_USER=chirpstack
+      - POSTGRES_DB=chirpstack
+    ports:
+      - 5432:5432
+    volumes:
+      - ./configuration/postgres/initdb:/docker-entrypoint-initdb.d
+      - chirpstack-postgres:/var/lib/postgresql/data
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.2
+
+  redis:
+    image: redis:6-alpine
+    command: redis-server --protected-mode no
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.3
+
+volumes:
+  chirpstack-postgres:
+  redis-data:
+
+networks:
+  chirpstack_static:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

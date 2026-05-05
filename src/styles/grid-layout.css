@@ -1,0 +1,148 @@
+/* Custom styles for react-grid-layout */
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+}
+
+/* Helper Grid Background wrapper (visible in edit mode) */
+.dashboard-edit-grid {
+  border-radius: var(--radius-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.dynamic-grid-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  --grid-row: 52px; /* 40px rowHeight + 12px margin */
+  background-image: 
+    linear-gradient(to right, hsl(var(--foreground) / 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+  background-size: calc((100% - 12px) / 12) var(--grid-row);
+  background-position: 6px 6px;
+  opacity: 1;
+}
+
+.dynamic-grid-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle at 1.5px 1.5px, hsl(var(--foreground) / 0.1) 1.5px, transparent 0);
+  background-size: calc((100% - 12px) / 12) var(--grid-row);
+  background-position: 5px 5px;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item.resizing {
+  z-index: 1000;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 1000;
+  will-change: left, top;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+/* Premium Placeholder */
+.react-grid-placeholder {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.03)) !important;
+  border-radius: var(--radius-xl) !important;
+  border: 2px dashed hsl(var(--primary) / 0.15) !important;
+  user-select: none;
+  z-index: 1 !important;
+  transition: all 150ms ease-out !important;
+  animation: placeholderPulse 2s infinite ease-in-out;
+  opacity: 1 !important;
+}
+
+@keyframes placeholderPulse {
+  0% { transform: scale(0.99); opacity: 0.6; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.99); opacity: 0.6; }
+}
+
+.widget-container {
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* Modern Resize Handles */
+.react-resizable-handle {
+  opacity: 0;
+  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
+}
+
+.is-editable {
+  user-select: none; /* Prevent accidental text highlighting during drag/resize */
+}
+
+.is-editable .react-resizable-handle {
+  opacity: 0.4; /* Visible in edit mode */
+}
+
+.react-grid-item:hover .react-resizable-handle {
+  opacity: 1 !important;
+}
+
+/* Professional Corner Grip (Datacake style) - South West (Bottom Left) */
+.react-resizable-handle-sw {
+  width: 24px;
+  height: 24px;
+  bottom: 0px !important;
+  left: 0px !important;
+  cursor: sw-resize;
+  background: transparent;
+}
+
+.react-resizable-handle-sw::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  width: 12px;
+  height: 12px;
+  /* Flipped Diagonal Grip Lines for Bottom-Left */
+  background: linear-gradient(
+    -135deg,
+    transparent 45%,
+    hsl(var(--primary)) 45%,
+    hsl(var(--primary)) 55%,
+    transparent 55%,
+    transparent 70%,
+    hsl(var(--primary)) 70%,
+    hsl(var(--primary)) 80%,
+    transparent 80%
+  );
+  transition: all 200ms ease;
+  opacity: 0.7;
+}
+
+.react-resizable-handle-sw:hover::after {
+  opacity: 1;
+  transform: scale(1.1) translate(1px, -1px);
+}
+
+
+
+
+/* Remove awful black squares from previous attempt */
+.react-resizable-handle-e,
+.react-resizable-handle-s {
+  display: none !important;
+}
+
+
+
+
