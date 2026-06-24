@@ -44,6 +44,8 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
     appKey: "",
     description: "",
     tags: "",
+    latitude: "",
+    longitude: "",
   });
 
   function handleChange(field: string, value: string) {
@@ -66,13 +68,15 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
         app_key: form.appKey || null,
         description: form.description || null,
         tags: form.tags.split(',').map(t => t.trim()).filter(Boolean),
+        latitude: form.latitude ? parseFloat(form.latitude) : null,
+        longitude: form.longitude ? parseFloat(form.longitude) : null,
       } as any);
 
       toast.success("Device added successfully", {
         description: `"${form.name}" has been registered in your workspace.`,
       });
       onOpenChange(false);
-      setForm({ name: "", deviceType: "generic", connectivity: "mqtt", serialNumber: "", devEui: "", appEui: "", appKey: "", description: "", tags: "" });
+      setForm({ name: "", deviceType: "generic", connectivity: "mqtt", serialNumber: "", devEui: "", appEui: "", appKey: "", description: "", tags: "", latitude: "", longitude: "" });
     } catch (error: any) {
       toast.error(error.message || "Failed to add device");
     }
@@ -192,6 +196,31 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
                 </div>
               </>
             )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="latitude">Latitude</Label>
+              <Input
+                id="latitude"
+                type="number"
+                step="any"
+                placeholder="e.g. 45.8150"
+                value={form.latitude}
+                onChange={(e) => handleChange("latitude", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="longitude">Longitude</Label>
+              <Input
+                id="longitude"
+                type="number"
+                step="any"
+                placeholder="e.g. 15.9819"
+                value={form.longitude}
+                onChange={(e) => handleChange("longitude", e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

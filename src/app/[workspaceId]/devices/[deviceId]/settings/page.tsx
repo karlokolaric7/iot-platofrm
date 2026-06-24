@@ -43,6 +43,8 @@ export default function DeviceSettingsPage({
     connectivity: "lorawan",
     devEui: "",
     serialNumber: "",
+    latitude: "",
+    longitude: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,8 @@ export default function DeviceSettingsPage({
         connectivity: device.connectivity || "lorawan",
         devEui: device.dev_eui || "",
         serialNumber: device.serial_number || "",
+        latitude: device.latitude?.toString() || "",
+        longitude: device.longitude?.toString() || "",
       });
     }
   }, [device]);
@@ -79,6 +83,8 @@ export default function DeviceSettingsPage({
         connectivity: form.connectivity,
         dev_eui: form.devEui,
         serial_number: form.serialNumber,
+        latitude: form.latitude ? parseFloat(form.latitude) : null,
+        longitude: form.longitude ? parseFloat(form.longitude) : null,
       });
       toast.success("Device settings updated");
       router.push(`/${workspaceId}/devices/${deviceId}`);
@@ -163,9 +169,9 @@ export default function DeviceSettingsPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Connectivity</CardTitle>
+            <CardTitle>Connectivity & Geolocation</CardTitle>
             <CardDescription>
-              Technical parameters and protocols.
+              Technical parameters, protocols, and physical location.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -210,6 +216,31 @@ export default function DeviceSettingsPage({
                 />
               </div>
             )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-6 mt-2">
+              <div className="grid gap-2">
+                <Label htmlFor="latitude">Latitude</Label>
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="any"
+                  value={form.latitude}
+                  onChange={(e) => handleChange("latitude", e.target.value)}
+                  placeholder="e.g. 45.8150"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="any"
+                  value={form.longitude}
+                  onChange={(e) => handleChange("longitude", e.target.value)}
+                  placeholder="e.g. 15.9819"
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 

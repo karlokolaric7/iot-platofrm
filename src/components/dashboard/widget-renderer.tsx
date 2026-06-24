@@ -64,29 +64,37 @@ export function WidgetRenderer({ widget, isEditable, onRemove, onEdit }: WidgetR
 
   return (
     <Card className={cn(
-      "h-full flex flex-col transition-all duration-300 group overflow-hidden border border-white/10 dark:border-white/5",
-      "bg-card/70 backdrop-blur-md supports-[backdrop-filter]:bg-background/60",
-      "shadow-[0_4px_12px_-2px_rgba(0,0,0,0.05),0_2px_4px_-1px_rgba(0,0,0,0.03)]",
+      "h-full flex flex-col transition-all duration-300 group overflow-hidden border border-white/60 dark:border-white/10",
+      "bg-white/70 dark:bg-slate-950/40 backdrop-blur-xl supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-slate-950/40",
+      "shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] inset-shadow-white dark:inset-shadow-none",
       "hover:shadow-[0_12px_24px_-4px_rgba(0,0,0,0.08),0_4px_8px_-2px_rgba(0,0,0,0.04)]",
       "hover:ring-1 hover:ring-primary/20",
       isEditable && "hover:border-primary/30"
     )}>
-      <CardHeader className={cn(headerPadding, "pb-0 flex flex-row items-center justify-between space-y-0 shrink-0 bg-gradient-to-b from-muted/20 to-transparent")}>
+      <CardHeader className={cn(
+        headerPadding, 
+        "pb-0 flex flex-row items-center justify-between space-y-0 shrink-0 bg-gradient-to-b from-muted/20 to-transparent relative",
+        isEditable && "widget-drag-handle cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-colors"
+      )}>
+        {isEditable && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500 opacity-80 rounded-t-lg" />
+        )}
         <div className="flex items-center gap-2 overflow-hidden flex-1">
-          <CardTitle className={cn("font-bold uppercase tracking-wider text-muted-foreground/80 group-hover:text-foreground transition-colors truncate leading-none", titleSize)}>
+          {isEditable && (
+            <GripVertical className={cn("text-muted-foreground/50 shrink-0", isLarge ? "h-5 w-5" : "h-4 w-4")} />
+          )}
+          <CardTitle className={cn("font-bold uppercase tracking-wider text-muted-foreground/80 group-hover:text-foreground transition-colors truncate leading-none mt-0.5", titleSize)}>
             {widget.title}
           </CardTitle>
         </div>
 
         <div className="flex items-center gap-0.5 shrink-0">
-          {isEditable && (
-            <div className="widget-drag-handle cursor-grab active:cursor-grabbing p-1.5 text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted rounded-md transition-all shrink-0">
-              <GripVertical className={cn(isLarge ? "h-5 w-5" : "h-4 w-4")} />
-            </div>
-          )}
-
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn("inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors opacity-0 group-hover:opacity-100", isLarge ? "h-8 w-8" : "h-7 w-7")}>
+            {/* Increase z-index and use onPointerDown stopPropagation so the menu works even though the header is draggable */}
+            <DropdownMenuTrigger 
+              onPointerDown={(e) => isEditable && e.stopPropagation()}
+              className={cn("relative z-10 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors opacity-0 group-hover:opacity-100", isLarge ? "h-8 w-8" : "h-7 w-7", isEditable && "opacity-100")}
+            >
               <MoreVertical className={cn(isLarge ? "h-5 w-5" : "h-4 w-4")} />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

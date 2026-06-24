@@ -42,7 +42,8 @@ export interface Device {
   deviceType: DeviceType;
   connectivity: ConnectivityType;
   status: DeviceStatus;
-  location?: { lat: number; lng: number };
+  latitude?: number;
+  longitude?: number;
   tags: string[];
   description?: string;
   lastSeen?: string;
@@ -104,7 +105,8 @@ export interface Gateway {
   status: DeviceStatus;
   connectedDevices: number;
   lastSeen?: string;
-  location?: { lat: number; lng: number };
+  latitude?: number;
+  longitude?: number;
   createdAt: string;
 }
 

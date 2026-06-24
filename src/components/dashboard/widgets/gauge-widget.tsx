@@ -75,19 +75,22 @@ export function GaugeWidget({ widget }: { widget: DashboardWidget }) {
               dataKey="value"
               stroke="none"
               isAnimationActive={true}
+              cornerRadius={4}
             >
               <Cell fill={color} />
-              <Cell fill="hsl(var(--muted))" />
+              <Cell fill="hsl(var(--muted))" opacity={0.3} />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
 
         {/* Value label - centered over the gauge flat edge */}
-        <div className="absolute bottom-[10%] left-0 right-0 flex flex-col items-center pointer-events-none">
-          <span className={cn("font-bold leading-tight", valueFontSize)}>
+        <div className="absolute bottom-[10%] left-0 right-0 flex flex-col items-center pointer-events-none drop-shadow-md">
+          <span className={cn("font-black tracking-tighter leading-none text-slate-800 dark:text-slate-100", valueFontSize)}>
             {displayStr}
-            <span className={cn("text-muted-foreground ml-1", unitSize)}>{unit}</span>
           </span>
+          {unit && (
+            <span className={cn("font-bold text-muted-foreground mt-0.5", unitSize)}>{unit}</span>
+          )}
         </div>
 
         {/* Min/Max labels */}

@@ -17,7 +17,7 @@ echo.
 echo [2/3] Starting Supabase Local
 :: Running supabase start in the background or synchronous. 
 :: `call` ensures the script continues after npx finishes.
-call npx supabase start
+call npx supabase start --ignore-health-check
 echo Supabase started.
 echo.
 

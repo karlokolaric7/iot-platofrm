@@ -137,6 +137,44 @@
 
 
 
+/* Professional Corner Grip - South East (Bottom Right) */
+.react-resizable-handle-se {
+  width: 24px;
+  height: 24px;
+  bottom: 0px !important;
+  right: 0px !important;
+  cursor: se-resize;
+  background: transparent;
+}
+
+.react-resizable-handle-se::after {
+  content: "";
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 12px;
+  height: 12px;
+  /* Diagonal Grip Lines for Bottom-Right */
+  background: linear-gradient(
+    135deg,
+    transparent 45%,
+    hsl(var(--primary)) 45%,
+    hsl(var(--primary)) 55%,
+    transparent 55%,
+    transparent 70%,
+    hsl(var(--primary)) 70%,
+    hsl(var(--primary)) 80%,
+    transparent 80%
+  );
+  transition: all 200ms ease;
+  opacity: 0.7;
+}
+
+.react-resizable-handle-se:hover::after {
+  opacity: 1;
+  transform: scale(1.1) translate(-1px, -1px);
+}
+
 /* Remove awful black squares from previous attempt */
 .react-resizable-handle-e,
 .react-resizable-handle-s {

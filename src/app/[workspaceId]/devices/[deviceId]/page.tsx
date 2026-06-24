@@ -4,36 +4,6 @@ import { use, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
 import { useDevice, useChirpstackDevice } from "@/hooks/use-iot-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Wifi,
-  WifiOff,
-  AlertTriangle,
-  HelpCircle,
-  Settings as SettingsIcon,
-  RefreshCw,
-  Download,
-  Terminal,
-  Activity,
-  Zap,
-  BarChart3,
-  ArrowDownToLine,
-  Radio,
-  BellRing,
-  ShieldAlert,
-  Users,
-  LayoutDashboard,
-  SlidersHorizontal,
-  Bug
-} from "lucide-react";
 import { cn, isDeviceOnline } from "@/lib/utils";
 import { Device } from "@/lib/types";
 import { DeviceDebugLogs } from "@/components/devices/device-debug-logs";
@@ -44,14 +14,17 @@ import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { WidgetSidebar } from "@/components/dashboard/widget-sidebar";
 import { useDeviceDashboard, useUpdateWidgetLayouts, useDeleteWidget, useAddWidget, useUpdateWidget } from "@/hooks/use-iot-data";
 import { DashboardWidget as DashboardWidgetType } from "@/lib/types";
-import { Edit2, Save, X, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
-const STATUS_CONFIG: Record<Device["status"], { label: string; icon: React.ComponentType<{ className?: string }>; dot: string }> = {
-  online:  { label: "Online",  icon: Wifi,          dot: "bg-emerald-500" },
-  offline: { label: "Offline", icon: WifiOff,       dot: "bg-slate-400" },
-  warning: { label: "Warning", icon: AlertTriangle,  dot: "bg-amber-500" },
-  unknown: { label: "Unknown", icon: HelpCircle,     dot: "bg-muted-foreground" },
+const STATUS_CONFIG: Record<
+  Device["status"],
+  { label: string; dotClass: string; bgClass: string; textClass: string }
+> = {
+  online: { label: "Online", dotClass: "bg-emerald-500", bgClass: "bg-emerald-50 dark:bg-emerald-500/10", textClass: "text-emerald-700 dark:text-emerald-400" },
+  offline: { label: "Offline", dotClass: "bg-slate-400", bgClass: "bg-slate-100 dark:bg-slate-800", textClass: "text-slate-600 dark:text-slate-400" },
+  warning: { label: "Warning", dotClass: "bg-amber-500", bgClass: "bg-amber-50 dark:bg-amber-500/10", textClass: "text-amber-700 dark:text-amber-400" },
+  unknown: { label: "Unknown", dotClass: "bg-slate-300", bgClass: "bg-slate-50 dark:bg-slate-900", textClass: "text-slate-500 dark:text-slate-500" },
 };
 
 function formatLastSeen(dateStr?: string | null) {
@@ -84,7 +57,7 @@ export default function DeviceDetailPage({
   const addWidget = useAddWidget();
   const updateWidget = useUpdateWidget();
 
-  if (isLoading || isLoadingDashboard) return <div className="p-8 text-center text-muted-foreground">Loading device details...</div>;
+  if (isLoading || isLoadingDashboard) return <div className="p-8 text-center text-slate-500 font-medium">Loading device details...</div>;
   if (!dbDevice) notFound();
 
   // Merge Live Sync Status
@@ -99,116 +72,135 @@ export default function DeviceDetailPage({
   };
 
   const statusConfig = STATUS_CONFIG[device.status as Device['status']] || STATUS_CONFIG["unknown"];
-  const StatusIcon = statusConfig.icon;
 
   return (
-    <div className="space-y-6">
-      {/* Device Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <span className={cn("absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-background", statusConfig.dot)} />
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <StatusIcon className="h-5 w-5 text-primary" />
+    <div className="max-w-7xl mx-auto space-y-6 font-sans">
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 mb-2">
+        <Link href={`/${workspaceId}/devices`} className="hover:text-indigo-600 flex items-center gap-1 transition-colors">
+          <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          Fleet Management
+        </Link>
+        <span className="text-slate-300 dark:text-slate-700">/</span>
+        <span className="text-slate-900 dark:text-slate-100">{device.name}</span>
+      </div>
+
+      {/* Device Header Bento */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-500/5 rounded-bl-[100px] -z-10"></div>
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="flex items-start gap-5">
+            <div className="w-16 h-16 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20 shrink-0 shadow-sm">
+              <span className="material-symbols-outlined text-[32px] icon-stroke-thin">sensors</span>
             </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">{device.name}</h1>
-              {device.isLive && (
-                <Badge variant="secondary" className="gap-1 font-normal text-[10px] h-5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                  <Activity className="h-3 w-3" />
-                  Live Sync
-                </Badge>
-              )}
-              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider py-0 px-1.5 h-4">
-                {device.connectivity}
-              </Badge>
-            </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mt-1">
-              <div className="flex items-center gap-1.5">
-                <span className={cn("h-2 w-2 rounded-full", statusConfig.dot)} />
-                <span className={cn("font-medium", 
-                  device.status === 'online' ? "text-emerald-600" : "text-muted-foreground"
-                )}>
+            <div>
+              <div className="flex flex-wrap items-center gap-3 mb-1.5">
+                <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">{device.name}</h1>
+                <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm", statusConfig.bgClass, statusConfig.textClass)}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", statusConfig.dotClass, device.status === 'online' ? "animate-pulse" : "")}></span>
                   {statusConfig.label}
                 </span>
+                {device.isLive && (
+                  <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200 dark:border-emerald-500/20 uppercase tracking-wider">
+                    <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                    Live Sync
+                  </span>
+                )}
               </div>
-              
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Activity className="h-3.5 w-3.5" />
-                <span>Last Payload: {formatLastSeen(device.last_seen)}</span>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <span className="font-mono text-[10px] bg-muted px-1.5 py-0.5 rounded border uppercase">S/N</span>
-                <span className="font-medium tracking-tight">
-                  {device.serial_number || device.dev_eui || "No serial number"}
-                </span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
+                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">tag</span> EUI: {device.serial_number || device.dev_eui || "N/A"}</div>
+                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">cell_tower</span> {(device.connectivity || "unknown").toUpperCase()}</div>
+                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">update</span> Last seen: {formatLastSeen(device.last_seen)}</div>
               </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => router.refresh()}>
-            <RefreshCw className="h-3.5 w-3.5" />
-            Refresh
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => router.push(`/${workspaceId}/devices/${deviceId}/settings`)}>
-            <SettingsIcon className="h-3.5 w-3.5" />
-            Settings
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button 
+              onClick={() => router.push(`/${workspaceId}/devices/${deviceId}/settings`)}
+              className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">settings</span>
+              Configure
+            </button>
+            <button 
+              onClick={() => router.refresh()}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm shadow-indigo-200 dark:shadow-none"
+            >
+              <span className="material-symbols-outlined text-[18px]">refresh</span>
+              Sync
+            </button>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="bg-muted/50 p-1 flex overflow-x-auto w-full justify-start border-b rounded-none md:rounded-lg mb-6">
-          <TabsTrigger value="dashboard" className="px-4 gap-2 whitespace-nowrap"><LayoutDashboard className="h-3.5 w-3.5" />Dashboard</TabsTrigger>
-          <TabsTrigger value="history" className="px-4 gap-2 whitespace-nowrap"><BarChart3 className="h-3.5 w-3.5" />History</TabsTrigger>
-          <TabsTrigger value="downlinks" className="px-4 gap-2 whitespace-nowrap"><ArrowDownToLine className="h-3.5 w-3.5" />Downlinks</TabsTrigger>
-          <TabsTrigger value="configuration" className="px-4 gap-2 whitespace-nowrap"><SlidersHorizontal className="h-3.5 w-3.5" />Configuration</TabsTrigger>
-          <TabsTrigger value="lorawan" className="px-4 gap-2 whitespace-nowrap"><Radio className="h-3.5 w-3.5" />LoRaWAN</TabsTrigger>
-          <TabsTrigger value="debug" className="px-4 gap-2 whitespace-nowrap"><Bug className="h-3.5 w-3.5" />Debug</TabsTrigger>
-          <TabsTrigger value="rules" className="px-4 gap-2 whitespace-nowrap"><BellRing className="h-3.5 w-3.5" />Rules</TabsTrigger>
-          <TabsTrigger value="permissions" className="px-4 gap-2 whitespace-nowrap"><Users className="h-3.5 w-3.5" />Permissions</TabsTrigger>
+        <TabsList className="bg-transparent h-auto p-0 flex overflow-x-auto w-full justify-start border-b border-slate-200 dark:border-slate-800 hide-scrollbar gap-2 mb-6">
+          <TabsTrigger value="dashboard" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <span className="material-symbols-outlined text-[18px]">dashboard</span> Dashboard
+          </TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <span className="material-symbols-outlined text-[18px]">history</span> Telemetry History
+          </TabsTrigger>
+          <TabsTrigger value="downlinks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <span className="material-symbols-outlined text-[18px]">arrow_downward</span> Downlinks
+          </TabsTrigger>
+          <TabsTrigger value="configuration" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <span className="material-symbols-outlined text-[18px]">account_tree</span> Payload Decoders
+          </TabsTrigger>
+          <TabsTrigger value="debug" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
+            <span className="material-symbols-outlined text-[18px]">bug_report</span> Debug
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6 outline-none">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold">Device Dashboard</h2>
-              <p className="text-sm text-muted-foreground">Customizable real-time overview</p>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Live Telemetry</h2>
+              <p className="text-xs font-semibold text-slate-500">Customizable real-time widget view</p>
             </div>
             <div className="flex items-center gap-2">
               {isEditingDashboard ? (
                 <>
-                  <Button variant="outline" size="sm" className="gap-2 border-emerald-500/50 text-emerald-600 hover:bg-emerald-50" onClick={() => setIsEditingDashboard(false)}>
-                    <Save className="h-3.5 w-3.5" />
-                    Finish Editing
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsAddingWidget(true)}>
-                    <PlusCircle className="h-3.5 w-3.5" />
+                  <button onClick={() => setIsAddingWidget(true)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors shadow-sm text-slate-700 dark:text-slate-300">
+                    <span className="material-symbols-outlined text-[16px]">add_circle</span>
                     Add Widget
-                  </Button>
+                  </button>
+                  <button onClick={() => setIsEditingDashboard(false)} className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border border-emerald-200 dark:border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors shadow-sm">
+                    <span className="material-symbols-outlined text-[16px]">check</span>
+                    Save Layout
+                  </button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => setIsEditingDashboard(true)}>
-                  <Edit2 className="h-3.5 w-3.5" />
-                  Customize Dashboard
-                </Button>
+                <button onClick={() => setIsEditingDashboard(true)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors shadow-sm text-slate-700 dark:text-slate-300">
+                  <span className="material-symbols-outlined text-[16px]">dashboard_customize</span>
+                  Edit Dashboard
+                </button>
               )}
             </div>
           </div>
 
           <div className={cn(
-            "relative min-h-[600px] rounded-2xl transition-all duration-500",
-            isEditingDashboard ? "bg-muted/30 ring-1 ring-primary/20 p-2 lg:p-4" : "p-0"
+            "relative min-h-[400px] rounded-xl transition-all duration-300",
+            isEditingDashboard ? "bg-slate-100/50 dark:bg-slate-800/20 border-2 border-dashed border-indigo-200 dark:border-indigo-800 p-4" : "p-0"
           )}>
             {isEditingDashboard && (
-              <div className="absolute top-4 left-4 z-20 flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest animate-in fade-in slide-in-from-top-2 duration-500">
-                <SlidersHorizontal className="h-3 w-3" />
-                Customize Mode: Grab and drag widgets to rearrange
-              </div>
+              <>
+                <div className="absolute -top-3 left-4 z-20 flex items-center gap-1.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
+                  <span className="material-symbols-outlined text-[14px]">drag_indicator</span>
+                  Edit Mode Active
+                </div>
+                <div className="mb-4 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-3 flex items-start gap-3">
+                  <div className="bg-teal-100 dark:bg-teal-800 text-teal-600 dark:text-teal-400 p-1.5 rounded-md mt-0.5">
+                    <span className="material-symbols-outlined text-[18px]">lightbulb</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-teal-900 dark:text-teal-100">Pro Tip</h4>
+                    <p className="text-xs font-medium text-teal-700 dark:text-teal-300 mt-0.5">
+                      Grab any widget's top header to drag and reorder. Pull from the bottom corners to resize.
+                    </p>
+                  </div>
+                </div>
+              </>
             )}
             
             {dashboard?.widgets?.length > 0 ? (
@@ -243,23 +235,22 @@ export default function DeviceDetailPage({
                 }}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <LayoutDashboard className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                <h3 className="font-semibold text-lg">Empty Dashboard</h3>
-                <p className="text-sm text-muted-foreground max-w-xs mt-1 mb-6">
-                  Click 'Customize Dashboard' to start adding widgets and visualize your device data.
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm h-[400px]">
+                <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
+                  <span className="material-symbols-outlined text-[24px]">widgets</span>
+                </div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">No Widgets Configured</h3>
+                <p className="text-sm font-medium text-slate-500 max-w-xs mt-1 mb-6">
+                  Add widgets to visualize the live data streaming from this device.
                 </p>
                 {!isEditingDashboard && (
-                  <Button size="sm" variant="outline" onClick={() => setIsEditingDashboard(true)}>
-                    Start Customizing
-                  </Button>
+                  <button onClick={() => setIsEditingDashboard(true)} className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 px-4 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm">
+                    <span className="material-symbols-outlined text-[18px]">add</span>
+                    Configure Dashboard
+                  </button>
                 )}
               </div>
             )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8 opacity-60">
-             {/* ... remaining cards ... */}
           </div>
 
           <WidgetSidebar
@@ -306,22 +297,25 @@ export default function DeviceDetailPage({
         </TabsContent>
 
         <TabsContent value="downlinks" className="space-y-6">
-          <Card className="border-dashed bg-muted/20 border-2">
-             <CardContent className="flex flex-col items-center justify-center py-24 text-center opacity-70">
-                <ArrowDownToLine className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                <h3 className="text-xl font-bold tracking-tight">Downlink Queue</h3>
-                <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">Queue messages and configuration payloads to be sent to your device on the next uplink window.</p>
-             </CardContent>
-          </Card>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-12 flex flex-col items-center justify-center text-center shadow-sm">
+             <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
+                <span className="material-symbols-outlined text-[32px]">arrow_downward</span>
+             </div>
+             <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Downlink Queue</h3>
+             <p className="text-sm font-medium text-slate-500 mt-2 max-w-md mx-auto">Queue configuration payloads to be sent to your device on the next uplink window.</p>
+             <button className="mt-6 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 px-4 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm">
+                <span className="material-symbols-outlined text-[18px]">add</span>
+                Schedule Downlink
+             </button>
+          </div>
         </TabsContent>
 
         <TabsContent value="configuration" className="space-y-6 outline-none">
-          <DeviceFieldsTab 
-            deviceId={deviceId} 
-            fields={(device as any).fields || []} 
-          />
-          
-          <div className="pt-4 border-t">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <DeviceFieldsTab 
+              deviceId={deviceId} 
+              fields={(device as any).fields || []} 
+            />
             <PayloadDecoderTab 
               deviceId={deviceId} 
               decoder={(device as any).payload_decoders?.[0]} 
@@ -329,38 +323,8 @@ export default function DeviceDetailPage({
           </div>
         </TabsContent>
 
-        <TabsContent value="lorawan" className="space-y-6">
-          <Card className="border-dashed bg-muted/20 border-2">
-             <CardContent className="flex flex-col items-center justify-center py-24 text-center opacity-70">
-                <Radio className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                <h3 className="text-xl font-bold tracking-tight">LoRaWAN Networking</h3>
-                <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">Live network statistics including Spreading Factor, RSSI, SNR, and gateway reception paths.</p>
-             </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="debug" className="h-[500px]">
           <DeviceDebugLogs deviceId={deviceId} />
-        </TabsContent>
-
-        <TabsContent value="rules" className="space-y-6">
-          <Card className="border-dashed bg-muted/20 border-2">
-             <CardContent className="flex flex-col items-center justify-center py-24 text-center opacity-70">
-                <ShieldAlert className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                <h3 className="text-xl font-bold tracking-tight">Alert Rules</h3>
-                <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">Set up threshold triggers, email alerts, and webhook notifications based on device data.</p>
-             </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="permissions" className="space-y-6">
-          <Card className="border-dashed bg-muted/20 border-2">
-             <CardContent className="flex flex-col items-center justify-center py-24 text-center opacity-70">
-                <Users className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                <h3 className="text-xl font-bold tracking-tight">Device Access</h3>
-                <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">Manage API tokens, claim codes, and team member visibility for this specific device.</p>
-             </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

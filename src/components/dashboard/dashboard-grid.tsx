@@ -101,7 +101,7 @@ export function DashboardGrid({
         rowHeight={40}
         isDraggable={isEditable}
         isResizable={isEditable}
-        resizeHandles={['sw']}
+        resizeHandles={['se', 'sw']}
         onLayoutChange={handleLayoutChange}
         draggableHandle=".widget-drag-handle"
         margin={[12, 12]}

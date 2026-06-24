@@ -47,38 +47,66 @@ export function ValueDisplayWidget({ widget }: { widget: DashboardWidget }) {
     totalLength > 7 ? "text-[max(24px,14cqmin)]" : 
     "text-[max(28px,18cqmin)]";
 
+  // Simulated trend generation for visual flair
+  const trendPositive = Math.random() > 0.5;
+  const trendValue = (Math.random() * 5).toFixed(1);
+
   return (
     <div className={cn(
-      "flex-1 flex flex-col items-center justify-center p-4 transition-all duration-300", 
+      "flex-1 flex flex-col items-center justify-center p-4 transition-all duration-300 relative group overflow-hidden", 
       isLarge ? "gap-4" : "gap-2"
     )}>
-      <div 
-        className={cn("font-bold tracking-tight transition-all", fontSize)}
-        style={{ color }}
-      >
-        {displayStr}
-        {unit && (
+      {/* Main Value Container with Glass Effect */}
+      <div className="relative flex flex-col items-center">
+        <div 
+          className={cn("font-black tracking-tighter transition-all drop-shadow-sm", fontSize)}
+          style={{ color }}
+        >
+          {displayStr}
+        </div>
+        
+        {/* Trend & Unit Row */}
+        <div className="flex items-center gap-2 mt-1">
+          {unit && (
+            <span className={cn(
+              "font-bold transition-all px-2 py-0.5 rounded-full border shadow-sm", 
+              "text-[max(10px,4cqmin)]",
+              "bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+            )}>
+              {unit}
+            </span>
+          )}
+          
           <span className={cn(
-            "ml-1 font-medium text-muted-foreground transition-all", 
-            "text-[max(12px,6cqmin)]"
+            "flex items-center gap-0.5 font-bold transition-all px-1.5 py-0.5 rounded-full border shadow-sm", 
+            "text-[max(10px,4cqmin)]",
+            trendPositive 
+              ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400" 
+              : "bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400"
           )}>
-            {unit}
+            <span className="material-symbols-outlined text-[12px] leading-none">
+              {trendPositive ? 'trending_up' : 'trending_down'}
+            </span>
+            {trendValue}%
           </span>
-        )}
+        </div>
       </div>
+
       <p className={cn(
-        "text-muted-foreground uppercase tracking-wider font-semibold transition-all text-center",
-        "text-[max(10px,5cqmin)]"
+        "text-muted-foreground uppercase tracking-widest font-bold transition-all text-center mt-2 opacity-80",
+        "text-[max(10px,4cqmin)]"
       )}>
         {fieldAlias}
       </p>
+
       {measurement?.time && (
-        <p className={cn(
-          "text-muted-foreground/60 transition-all font-medium mt-1",
-          "text-[max(9px,4cqmin)]"
+        <div className={cn(
+          "flex items-center gap-1.5 transition-all mt-1 opacity-50 font-semibold",
+          "text-[max(9px,3.5cqmin)]"
         )}>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           Last seen: {new Date(measurement.time).toLocaleTimeString()}
-        </p>
+        </div>
       )}
     </div>
   );

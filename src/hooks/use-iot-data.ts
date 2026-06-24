@@ -114,6 +114,31 @@ export function useCurrentUser() {
   });
 }
 
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, full_name, avatar_url }: { id: string; full_name?: string | null; avatar_url?: string | null }) => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          full_name,
+          avatar_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    },
+  });
+}
+
 export function useCreateWorkspace() {
   const queryClient = useQueryClient();
 
@@ -256,6 +281,35 @@ export function useLatestMeasurements(deviceId: string) {
   });
 }
 
+export function useWorkspaceMeasurements(workspaceId: string) {
+  return useQuery({
+    queryKey: ['workspace-measurements', workspaceId],
+    queryFn: async () => {
+      const actualWorkspaceId = await getWorkspaceId(workspaceId);
+      
+      const { data, error } = await supabase
+        .from('measurements')
+        .select(`
+          id,
+          time,
+          value,
+          device_id,
+          field_id,
+          devices!inner(name, workspace_id),
+          fields(name, alias, unit)
+        `)
+        .eq('devices.workspace_id', actualWorkspaceId)
+        .order('time', { ascending: false })
+        .limit(100);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!workspaceId,
+    refetchInterval: 5000,
+  });
+}
+
 export function useHistoricalData(deviceId: string, fieldId: string, range: string) {
   return useQuery({
     queryKey: ['measurements', 'history', deviceId, fieldId, range],
@@ -265,6 +319,7 @@ export function useHistoricalData(deviceId: string, fieldId: string, range: stri
       let fromDate = new Date();
       switch (range) {
         case '1h': fromDate.setHours(fromDate.getHours() - 1); break;
+        case '6h': fromDate.setHours(fromDate.getHours() - 6); break;
         case '24h': fromDate.setHours(fromDate.getHours() - 24); break;
         case '7d': fromDate.setDate(fromDate.getDate() - 7); break;
         case '30d': fromDate.setDate(fromDate.getDate() - 30); break;
@@ -283,6 +338,7 @@ export function useHistoricalData(deviceId: string, fieldId: string, range: stri
       return data;
     },
     enabled: !!deviceId && !!fieldId,
+    refetchInterval: 5000,
   });
 }
 
@@ -1115,4 +1171,27 @@ export function useRealtimeDeviceLogs(deviceId: string) {
       supabase.removeChannel(channel);
     };
   }, [deviceId, queryClient]);
+}
+
+export function useWorkspaceStats(workspaceId: string) {
+  return useQuery({
+    queryKey: ['workspace-stats', workspaceId],
+    queryFn: async () => {
+      const actualWorkspaceId = await getWorkspaceId(workspaceId);
+      const oneDayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      
+      const { count, error } = await supabase
+        .from('measurements')
+        .select('id, devices!inner(workspace_id)', { count: 'exact', head: true })
+        .eq('devices.workspace_id', actualWorkspaceId)
+        .gte('time', oneDayAgo);
+        
+      if (error) throw error;
+      return {
+        dailyCount: count || 0
+      };
+    },
+    enabled: !!workspaceId,
+    refetchInterval: 5000,
+  });
 }
