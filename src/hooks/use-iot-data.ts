@@ -1316,22 +1316,31 @@ export function useRealtimeDeviceLogs(deviceId: string) {
   }, [deviceId, queryClient]);
 }
 
-export function useWorkspaceStats(workspaceId: string) {
+export function useWorkspaceStats(workspaceId: string, range: string = '24h') {
   return useQuery({
-    queryKey: ['workspace-stats', workspaceId],
+    queryKey: ['workspace-stats', workspaceId, range],
     queryFn: async () => {
       const actualWorkspaceId = await getWorkspaceId(workspaceId);
-      const oneDayAgo = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      
+      let fromDate = new Date();
+      switch (range.toLowerCase()) {
+        case '1h': fromDate.setHours(fromDate.getHours() - 1); break;
+        case '6h': fromDate.setHours(fromDate.getHours() - 6); break;
+        case '24h': fromDate.setHours(fromDate.getHours() - 24); break;
+        case '7d': fromDate.setDate(fromDate.getDate() - 7); break;
+        case '30d': fromDate.setDate(fromDate.getDate() - 30); break;
+        default: fromDate.setHours(fromDate.getHours() - 24);
+      }
       
       const { count, error } = await supabase
         .from('measurements')
         .select('id, devices!inner(workspace_id)', { count: 'exact', head: true })
         .eq('devices.workspace_id', actualWorkspaceId)
-        .gte('time', oneDayAgo);
+        .gte('time', fromDate.toISOString());
         
       if (error) throw error;
       return {
-        dailyCount: count || 0
+        count: count || 0
       };
     },
     enabled: !!workspaceId,

@@ -13,20 +13,27 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export function BarChartWidget({ widget }: { widget: DashboardWidget }) {
+export function BarChartWidget({ widget, timeframe = "24h" }: { widget: DashboardWidget; timeframe?: string }) {
   const deviceId = widget.device_id || "";
   const fieldId = widget.field_id || "";
   
-  // Fetch historical data for the last 24h
-  const { data: history = [] } = useHistoricalData(deviceId, fieldId, "24h");
+  // Fetch historical data for the selected timeframe
+  const { data: history = [] } = useHistoricalData(deviceId, fieldId, timeframe);
   
   // Fetch measurements for real-time updates (triggering re-fetch)
   useRealtimeMeasurements(deviceId);
 
-  const chartData = history.map(m => ({
-    time: new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    value: Number(m.value)
-  }));
+  const chartData = history.map(m => {
+    const date = new Date(m.time);
+    const timeLabel = timeframe === "1h" || timeframe === "6h" || timeframe === "24h"
+      ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      
+    return {
+      time: timeLabel,
+      value: Number(m.value)
+    };
+  });
 
   const config = widget.config as any;
   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
@@ -105,7 +112,7 @@ export function BarChartWidget({ widget }: { widget: DashboardWidget }) {
 
       {/* Footer Sparkline Legend */}
       <div className="px-1 mt-2 flex justify-between items-center text-[10px] text-muted-foreground font-bold tracking-wider border-t border-slate-100/50 dark:border-slate-800/20 pt-2 shrink-0">
-        <span className="uppercase opacity-75">Bar Distribution</span>
+        <span className="uppercase opacity-75">{timeframe.toUpperCase()} Distribution</span>
         <span className="text-foreground font-extrabold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900/60 border border-slate-200/20 dark:border-slate-800/40">
           {lastValue.toFixed(1)} {unit}
         </span>

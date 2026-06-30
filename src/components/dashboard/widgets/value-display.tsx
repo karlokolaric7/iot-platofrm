@@ -5,7 +5,7 @@ import { DashboardWidget } from "@/lib/types";
 import { useLatestMeasurements, useRealtimeMeasurements, useHistoricalData } from "@/hooks/use-iot-data";
 import { cn } from "@/lib/utils";
 
-export function ValueDisplayWidget({ widget }: { widget: DashboardWidget }) {
+export function ValueDisplayWidget({ widget, timeframe = "24h" }: { widget: DashboardWidget; timeframe?: string }) {
   const deviceId = widget.device_id || "";
   const fieldId = widget.field_id || "";
 
@@ -14,7 +14,7 @@ export function ValueDisplayWidget({ widget }: { widget: DashboardWidget }) {
   useRealtimeMeasurements(deviceId);
 
   // Fetch historical data for sparkline & trend
-  const { data: history = [] } = useHistoricalData(deviceId, fieldId, "24h");
+  const { data: history = [] } = useHistoricalData(deviceId, fieldId, timeframe);
 
   const measurement = (measurements as any[]).find(m => m.field_id === fieldId);
   const value = measurement?.value ?? "—";

@@ -24,11 +24,12 @@ import { MapWidget } from "./widgets/map-widget";
 interface WidgetRendererProps {
   widget: DashboardWidget;
   isEditable: boolean;
+  timeframe?: string;
   onRemove: (id: string) => void;
   onEdit?: (widget: DashboardWidget) => void;
 }
 
-export function WidgetRenderer({ widget, isEditable, onRemove, onEdit }: WidgetRendererProps) {
+export function WidgetRenderer({ widget, isEditable, timeframe = "24h", onRemove, onEdit }: WidgetRendererProps) {
   // Scaling flags and constants
   const h = widget.h || 0;
   const isXL = h >= 16;
@@ -41,15 +42,15 @@ export function WidgetRenderer({ widget, isEditable, onRemove, onEdit }: WidgetR
   const renderWidgetContent = () => {
     switch (widget.type) {
       case "value_display":
-        return <ValueDisplayWidget widget={widget} />;
+        return <ValueDisplayWidget widget={widget} timeframe={timeframe} />;
       case "gauge":
         return <GaugeWidget widget={widget} />;
       case "line_chart":
-        return <LineChartWidget widget={widget} />;
+        return <LineChartWidget widget={widget} timeframe={timeframe} />;
       case "status_bubble":
         return <StatusBubbleWidget widget={widget} />;
       case "bar_chart":
-        return <BarChartWidget widget={widget} />;
+        return <BarChartWidget widget={widget} timeframe={timeframe} />;
       case "map":
         return <MapWidget widget={widget} />;
       default:

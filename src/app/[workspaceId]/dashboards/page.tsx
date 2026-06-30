@@ -51,7 +51,7 @@ export default function DashboardsPage({
   const { data: devices = [] } = useDevices(workspaceId);
   const { data: measurements = [], isLoading: isMeasurementsLoading } = useWorkspaceMeasurements(workspaceId);
   const { data: alerts = [], isLoading: isAlertsLoading } = useAlerts(workspaceId);
-  const { data: stats } = useWorkspaceStats(workspaceId);
+  const { data: stats } = useWorkspaceStats(workspaceId, activeTimeRange);
   
   const { data: historicalData = [] } = useHistoricalData(selectedDeviceId, selectedFieldId, telemetryTimeframe);
 
@@ -365,6 +365,7 @@ export default function DashboardsPage({
                 key={range}
                 onClick={() => {
                   setActiveTimeRange(range);
+                  setTelemetryTimeframe(range.toLowerCase());
                   toast.info(language === "hr" ? `Opseg nadzorne ploče postavljen na ${range}` : `Dashboard scope filter set to ${range}`);
                 }}
                 className={`px-3 py-1.5 text-xs font-bold rounded transition-colors cursor-pointer ${
@@ -470,16 +471,22 @@ export default function DashboardsPage({
             </div>
             <div className="relative z-10">
               <div className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                {stats?.dailyCount !== undefined 
-                  ? (stats.dailyCount >= 1000000 
-                      ? `${(stats.dailyCount / 1000000).toFixed(1)}M` 
-                      : stats.dailyCount >= 1000 
-                        ? `${(stats.dailyCount / 1000).toFixed(1)}K` 
-                        : stats.dailyCount) 
+                {stats?.count !== undefined 
+                  ? (stats.count >= 1000000 
+                      ? `${(stats.count / 1000000).toFixed(1)}M` 
+                      : stats.count >= 1000 
+                        ? `${(stats.count / 1000).toFixed(1)}K` 
+                        : stats.count) 
                   : "0"}
               </div>
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">
-                {language === "hr" ? "Poruka/Dan" : "Msg/Day"}
+                {activeTimeRange === "1H" 
+                  ? (language === "hr" ? "Poruka/Sat" : "Msg/Hour")
+                  : activeTimeRange === "24H"
+                    ? (language === "hr" ? "Poruka/Dan" : "Msg/Day")
+                    : activeTimeRange === "7D"
+                      ? (language === "hr" ? "Poruka/Tjedan" : "Msg/Week")
+                      : (language === "hr" ? "Poruka/Mjesec" : "Msg/Month")}
               </div>
             </div>
           </div>

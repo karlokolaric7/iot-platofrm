@@ -34,6 +34,7 @@ export default function SingleDashboardPage({
   const [editMode, setEditMode] = useState(false);
   const [widgets, setWidgets] = useState<DashboardWidget[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [timeframe, setTimeframe] = useState("24h");
 
   // Sync widgets when dashboard data loads
   useState(() => {
@@ -112,6 +113,27 @@ export default function SingleDashboardPage({
         </div>
 
         <div className="flex items-center gap-2">
+          {!editMode && (
+            <div className="bg-white/50 dark:bg-slate-950/30 border border-slate-200/50 dark:border-slate-800/40 rounded-lg p-0.5 flex items-center shadow-sm backdrop-blur-sm mr-2">
+              {["1h", "24h", "7d", "30d"].map((range) => (
+                <button 
+                  key={range}
+                  onClick={() => {
+                    setTimeframe(range);
+                    toast.info(`Dashboard timeframe set to ${range.toUpperCase()}`);
+                  }}
+                  className={cn(
+                    "px-2.5 py-1 text-[10px] font-bold rounded transition-all cursor-pointer",
+                    timeframe === range 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {range.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
           {editMode ? (
             <>
               <Button
@@ -183,6 +205,7 @@ export default function SingleDashboardPage({
           dashboardId={dashboardId}
           widgets={widgets}
           isEditable={editMode}
+          timeframe={timeframe}
           onLayoutChange={(newWidgets) => setWidgets(newWidgets)}
           onWidgetDelete={handleWidgetDelete}
         />

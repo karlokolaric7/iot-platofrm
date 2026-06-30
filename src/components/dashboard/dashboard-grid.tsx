@@ -31,6 +31,7 @@ interface DashboardGridProps {
   dashboardId: string;
   widgets: DashboardWidget[];
   isEditable: boolean;
+  timeframe?: string;
   onLayoutChange: (newWidgets: DashboardWidget[]) => void;
   onWidgetDelete: (id: string) => void;
   onWidgetEdit?: (widget: DashboardWidget) => void;
@@ -39,6 +40,7 @@ interface DashboardGridProps {
 export function DashboardGrid({
   widgets,
   isEditable,
+  timeframe = "24h",
   onLayoutChange,
   onWidgetDelete,
   onWidgetEdit,
@@ -112,6 +114,7 @@ export function DashboardGrid({
             <WidgetRenderer 
               widget={widget} 
               isEditable={isEditable} 
+              timeframe={timeframe}
               onRemove={onWidgetDelete} 
               onEdit={onWidgetEdit}
             />

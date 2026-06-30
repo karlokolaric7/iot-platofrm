@@ -13,21 +13,29 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-export function LineChartWidget({ widget }: { widget: DashboardWidget }) {
+export function LineChartWidget({ widget, timeframe = "24h" }: { widget: DashboardWidget; timeframe?: string }) {
   const deviceId = widget.device_id || "";
   const fieldId = widget.field_id || "";
   
-  // Fetch historical data for the last 24h
-  const { data: history = [] } = useHistoricalData(deviceId, fieldId, "24h");
+  // Fetch historical data for the selected timeframe
+  const { data: history = [] } = useHistoricalData(deviceId, fieldId, timeframe);
   
   // Fetch measurements for current value
   const { data: measurements = [] } = useLatestMeasurements(deviceId);
   useRealtimeMeasurements(deviceId);
 
-  const chartData = history.map(m => ({
-    time: new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    value: Number(m.value)
-  }));
+  const chartData = history.map(m => {
+    // For 24h or less show time, for larger intervals show date + time or just date
+    const date = new Date(m.time);
+    const timeLabel = timeframe === "1h" || timeframe === "6h" || timeframe === "24h"
+      ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      
+    return {
+      time: timeLabel,
+      value: Number(m.value)
+    };
+  });
 
   const config = widget.config as any;
   const lastValue = chartData.length > 0 ? chartData[chartData.length - 1].value : 0;
@@ -108,7 +116,7 @@ export function LineChartWidget({ widget }: { widget: DashboardWidget }) {
 
       {/* Footer Sparkline Legend */}
       <div className="px-1 mt-2 flex justify-between items-center text-[10px] text-muted-foreground font-bold tracking-wider border-t border-slate-100/50 dark:border-slate-800/20 pt-2 shrink-0">
-        <span className="uppercase opacity-75">Historical 24H Trend</span>
+        <span className="uppercase opacity-75">Historical {timeframe.toUpperCase()} Trend</span>
         <span className="text-foreground font-extrabold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-900/60 border border-slate-200/20 dark:border-slate-800/40">
           {lastValue.toFixed(1)} {unit}
         </span>
