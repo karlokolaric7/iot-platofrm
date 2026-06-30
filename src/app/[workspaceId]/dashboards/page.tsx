@@ -44,7 +44,7 @@ export default function DashboardsPage({
   const [isExporting, setIsExporting] = useState(false);
   
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
-  const [selectedFieldId, setSelectedFieldId] = useState<string>("all");
+  const [selectedFieldId, setSelectedFieldId] = useState<string>("");
   const [telemetryTimeframe, setTelemetryTimeframe] = useState<string>("24h");
   
   const { data: dashboards = [], isLoading } = useDashboards(workspaceId);
@@ -242,14 +242,18 @@ export default function DashboardsPage({
   const activeFieldObj = activeFields.find((f: any) => f.id === selectedFieldId);
   const unit = activeFieldObj?.unit || "";
 
-  if (selectedFieldId === "all") {
-    // Message Ingestion Rate for the selected device using historical data
+  // Specific field historical readings
+  if (historicalData && historicalData.length > 0) {
+    const bucketCounts = Array(numBuckets).fill(0);
+    const bucketSums = Array(numBuckets).fill(0);
+
     historicalData.forEach((m: any) => {
       const mTime = new Date(m.time).getTime();
       const diffMs = now - mTime;
       const bucketIndex = numBuckets - 1 - Math.floor(diffMs / bucketDurationMs);
       if (bucketIndex >= 0 && bucketIndex < numBuckets) {
-        dynamicValues[bucketIndex]++;
+        bucketSums[bucketIndex] += Number(m.value);
+        bucketCounts[bucketIndex]++;
       }
     });
 
@@ -261,51 +265,25 @@ export default function DashboardsPage({
       } else {
         dynamicLabels[i] = dateAtBucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
       }
-    }
-  } else {
-    // Specific field historical readings
-    if (historicalData && historicalData.length > 0) {
-      const bucketCounts = Array(numBuckets).fill(0);
-      const bucketSums = Array(numBuckets).fill(0);
 
-      historicalData.forEach((m: any) => {
-        const mTime = new Date(m.time).getTime();
-        const diffMs = now - mTime;
-        const bucketIndex = numBuckets - 1 - Math.floor(diffMs / bucketDurationMs);
-        if (bucketIndex >= 0 && bucketIndex < numBuckets) {
-          bucketSums[bucketIndex] += Number(m.value);
-          bucketCounts[bucketIndex]++;
-        }
-      });
-
-      for (let i = 0; i < numBuckets; i++) {
-        const timeAtBucket = now - (numBuckets - 1 - i) * bucketDurationMs;
-        const dateAtBucket = new Date(timeAtBucket);
-        if (labelFormat === "time") {
-          dynamicLabels[i] = dateAtBucket.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-        } else {
-          dynamicLabels[i] = dateAtBucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        }
-
-        if (bucketCounts[i] > 0) {
-          dynamicValues[i] = Math.round((bucketSums[i] / bucketCounts[i]) * 10) / 10;
-        } else {
-          // If a bucket has no measurements, show zero
-          dynamicValues[i] = 0;
-        }
-      }
-    } else {
-      // If there is no historical data at all for the current timeframe, show zero
-      for (let i = 0; i < numBuckets; i++) {
-        const timeAtBucket = now - (numBuckets - 1 - i) * bucketDurationMs;
-        const dateAtBucket = new Date(timeAtBucket);
-        if (labelFormat === "time") {
-          dynamicLabels[i] = dateAtBucket.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-        } else {
-          dynamicLabels[i] = dateAtBucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        }
+      if (bucketCounts[i] > 0) {
+        dynamicValues[i] = Math.round((bucketSums[i] / bucketCounts[i]) * 10) / 10;
+      } else {
+        // If a bucket has no measurements, show zero
         dynamicValues[i] = 0;
       }
+    }
+  } else {
+    // If there is no historical data at all for the current timeframe, show zero
+    for (let i = 0; i < numBuckets; i++) {
+      const timeAtBucket = now - (numBuckets - 1 - i) * bucketDurationMs;
+      const dateAtBucket = new Date(timeAtBucket);
+      if (labelFormat === "time") {
+        dynamicLabels[i] = dateAtBucket.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+      } else {
+        dynamicLabels[i] = dateAtBucket.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+      dynamicValues[i] = 0;
     }
   }
 
@@ -498,14 +476,12 @@ export default function DashboardsPage({
           <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-6">
             <div>
               <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                {selectedFieldId === "all" 
-                  ? (language === "hr" ? `Zbirna telemetrija: ${activeDevice?.name || ""}` : `Aggregated Telemetry: ${activeDevice?.name || ""}`) 
-                  : (language === "hr" ? `Očitanja: ${activeFieldObj?.alias || activeFieldObj?.name}` : `Live Telemetry: ${activeFieldObj?.alias || activeFieldObj?.name}`)}
+                {language === "hr" 
+                  ? `Očitanja: ${activeFieldObj?.alias || activeFieldObj?.name || ""}` 
+                  : `Live Telemetry: ${activeFieldObj?.alias || activeFieldObj?.name || ""}`}
               </h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {selectedFieldId === "all" 
-                  ? (language === "hr" ? "Učestalost slanja poruka po odabranom vremenskom rasponu" : "Ingested message frequency for the selected timeframe")
-                  : (language === "hr" ? "Prosječne vrijednosti senzora agregirane u stvarnom vremenu" : "Average sensor values aggregated in real-time")}
+                {language === "hr" ? "Prosječne vrijednosti senzora agregirane u stvarnom vremenu" : "Average sensor values aggregated in real-time"}
               </p>
             </div>
             
@@ -527,7 +503,6 @@ export default function DashboardsPage({
                 onChange={(e) => setSelectedFieldId(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
               >
-                <option value="all">{language === "hr" ? "Učestalost poruka" : "Message Frequency"}</option>
                 {activeFields.map((f: any) => (
                   <option key={f.id} value={f.id}>{f.alias || f.name} ({f.unit})</option>
                 ))}
@@ -563,7 +538,7 @@ export default function DashboardsPage({
               return (
                 <div key={i} className="flex-1 flex flex-col justify-end group cursor-pointer relative h-full z-10">
                   <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-slate-950 text-white dark:text-slate-200 text-[10px] font-bold py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-md">
-                    {val} {selectedFieldId === "all" ? "msgs" : unit}
+                    {val} {unit}
                   </div>
                   <div 
                     className="w-full bg-indigo-50/30 dark:bg-indigo-950/10 rounded-t-md group-hover:bg-indigo-100/40 dark:group-hover:bg-indigo-950/20 transition-all duration-300 relative overflow-hidden" 
