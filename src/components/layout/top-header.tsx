@@ -111,6 +111,20 @@ export function TopHeader() {
     }
   }, [user, isEditProfileOpen]);
 
+  // Listen for sidebar trigger events
+  useEffect(() => {
+    const handleOpenHelp = () => setIsHelpOpen(true);
+    const handleOpenEditProfile = () => setIsEditProfileOpen(true);
+
+    window.addEventListener("open-help-dialog", handleOpenHelp);
+    window.addEventListener("open-edit-profile-dialog", handleOpenEditProfile);
+
+    return () => {
+      window.removeEventListener("open-help-dialog", handleOpenHelp);
+      window.removeEventListener("open-edit-profile-dialog", handleOpenEditProfile);
+    };
+  }, []);
+
   // Keybind for Ctrl+K search palette
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

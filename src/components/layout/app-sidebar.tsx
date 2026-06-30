@@ -30,9 +30,10 @@ import {
 } from "@/hooks/use-iot-data";
 import { CreateWorkspaceDialog } from "./create-workspace-dialog";
 import { useLanguage } from "@/context/language-context";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 export function AppSidebar() {
-  const { t } = useLanguage();
   const [mounted, setMounted] = React.useState(false);
   const [isInviteOpen, setIsInviteOpen] = React.useState(false);
   
@@ -44,10 +45,23 @@ export function AppSidebar() {
   const router = useRouter();
   const workspaceId = (params?.workspaceId as string) || "";
   const pathname = usePathname();
+  const supabase = createClient();
 
   const { data: workspaces = [], isLoading: isLoadingWorkspaces } = useWorkspaces();
   const { data: activeWorkspace } = useWorkspace(workspaceId);
   const { data: user } = useCurrentUser();
+
+  const { t, language } = useLanguage();
+
+  async function handleSignOut() {
+    try {
+      await supabase.auth.signOut();
+      toast.success(language === "hr" ? "Uspješna odjava." : "Signed out successfully.");
+      router.push("/auth");
+    } catch (err) {
+      toast.error(language === "hr" ? "Neuspjela odjava." : "Failed to sign out.");
+    }
+  }
 
   if (!mounted) {
     return <Sidebar collapsible="icon" className="border-r border-slate-100 bg-white dark:bg-slate-950" />
@@ -161,29 +175,107 @@ export function AppSidebar() {
         {/* Left space empty for scrolling */}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-100 dark:border-slate-900/50 pt-4 px-3 pb-4">
+      <SidebarFooter className="border-t border-slate-150 dark:border-slate-900 pt-4 px-3 pb-4">
         <SidebarMenu className="gap-0.5">
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip={t("sidebar.support")} className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-500 hover:text-slate-850 hover:bg-slate-50 cursor-pointer transition-all duration-150 ease-in-out h-auto font-normal">
-              <span className="material-symbols-outlined text-[20px] text-slate-400">help</span>
-              <span className="text-[13px] tracking-normal group-data-[collapsible=icon]:hidden">{t("sidebar.support")}</span>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full outline-none border-none text-left">
+                <SidebarMenuButton 
+                  tooltip={t("sidebar.support")} 
+                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all duration-150 ease-in-out h-auto font-normal w-full"
+                >
+                  <span className="material-symbols-outlined text-[20px] text-slate-400">help</span>
+                  <span className="text-[13px] tracking-normal group-data-[collapsible=icon]:hidden">{t("sidebar.support")}</span>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="right" className="w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1">
+                <DropdownMenuItem 
+                  className="gap-2.5 cursor-pointer text-xs font-semibold py-2"
+                  onClick={() => router.push(`/${workspaceId}/manual`)}
+                >
+                  <span className="material-symbols-outlined text-slate-400 text-[18px]">menu_book</span>
+                  {language === "hr" ? "Korisnički priručnik" : "User Manual"}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="gap-2.5 cursor-pointer text-xs font-semibold py-2"
+                  onClick={() => router.push(`/${workspaceId}/capabilities`)}
+                >
+                  <span className="material-symbols-outlined text-slate-400 text-[18px]">analytics</span>
+                  {language === "hr" ? "Mogućnosti platforme" : "Platform Capabilities"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                <DropdownMenuItem 
+                  className="gap-2.5 cursor-pointer text-xs font-semibold py-2 text-indigo-600 dark:text-indigo-400"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("open-help-dialog"));
+                  }}
+                >
+                  <span className="material-symbols-outlined text-[18px]">keyboard</span>
+                  {language === "hr" ? "Prečaci na tipkovnici" : "Keyboard Shortcuts"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip={t("sidebar.account")} className="flex items-center gap-3 px-3.5 py-2 rounded-lg text-slate-500 hover:text-slate-850 hover:bg-slate-50 cursor-pointer transition-all duration-150 ease-in-out h-auto font-normal">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 text-xs font-bold overflow-hidden">
-                {user?.profile?.avatar_url ? (
-                  <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="material-symbols-outlined text-[13px]">person</span>
-                )}
-              </div>
-              <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                <p className="truncate text-[13px] font-normal leading-tight">
-                  {user?.profile?.full_name || user?.email?.split('@')[0] || "User"}
-                </p>
-              </div>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full outline-none border-none text-left">
+                <SidebarMenuButton 
+                  tooltip={t("sidebar.account")} 
+                  className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all duration-150 ease-in-out h-auto font-normal w-full"
+                >
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-105 dark:bg-slate-850 text-slate-600 dark:text-slate-300 text-xs font-bold overflow-hidden border border-slate-200 dark:border-slate-800">
+                    {user?.profile?.avatar_url ? (
+                      <img src={user.profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-[13px]">person</span>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
+                    <p className="truncate text-[13px] font-normal leading-tight">
+                      {user?.profile?.full_name || user?.email?.split('@')[0] || "User"}
+                    </p>
+                  </div>
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="right" className="w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-1">
+                <div className="px-3.5 py-3 border-b border-slate-100 dark:border-slate-800/50">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">{t("header.currentAccount")}</p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate mt-1.5">{user?.profile?.full_name || (language === "hr" ? "Korisnik IoT platforme" : "IoT Platform Developer")}</p>
+                  <p className="text-[11px] text-slate-500 truncate leading-normal mt-0.5">{user?.email}</p>
+                </div>
+                
+                <div className="py-1">
+                  <DropdownMenuItem 
+                    className="gap-2.5 cursor-pointer text-xs font-semibold py-2"
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent("open-edit-profile-dialog"));
+                    }}
+                  >
+                    <span className="material-symbols-outlined text-slate-400 text-[18px]">manage_accounts</span>
+                    {t("header.editProfile")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="gap-2.5 cursor-pointer text-xs font-semibold py-2"
+                    onClick={() => router.push(`/${workspaceId}/settings`)}
+                  >
+                    <span className="material-symbols-outlined text-slate-400 text-[18px]">settings_accessibility</span>
+                    {t("header.workspaceSettings")}
+                  </DropdownMenuItem>
+                </div>
+
+                <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
+                
+                <div className="pb-0.5">
+                  <DropdownMenuItem 
+                    className="gap-2.5 cursor-pointer text-xs font-semibold py-2 text-rose-600 dark:text-rose-450 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                    onClick={handleSignOut}
+                  >
+                    <span className="material-symbols-outlined text-rose-500 text-[18px]">logout</span>
+                    {t("header.signOut")}
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
