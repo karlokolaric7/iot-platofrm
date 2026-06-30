@@ -194,6 +194,7 @@ export default function ManualPage() {
                   <li>Configure the widget by selecting the target device and field.</li>
                   <li>Drag the widget headers to move them; use the bottom-right corner handles to resize.</li>
                   <li>Click <strong>Save Layout</strong> to save the configuration permanently.</li>
+                  <li><strong>Timeframe Filter:</strong> Use the global timeframe selector in the dashboard header to instantly toggle between <strong>24 Hours (24h)</strong>, <strong>7 Days (7D)</strong>, and <strong>30 Days (30D)</strong>. The platform compiles historical telemetry on-demand with highly optimized database queries.</li>
                 </ul>
               </section>
 
@@ -211,6 +212,22 @@ export default function ManualPage() {
                   <li>Define the trigger condition (e.g. <em>If Temperature is Greater Than (&gt;) 30°C</em>).</li>
                   <li>Select the actions: generating an in-app alert, sending emails, or triggering external API webhooks.</li>
                   <li>Monitor triggered events on the <strong>Alerts</strong> page. You can click <strong>Resolve</strong> on individual alerts or click <strong>Clear All</strong> to flush the history.</li>
+                </ul>
+              </section>
+
+              {/* Section 7 */}
+              <section className="space-y-4">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-foreground border-b pb-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">7</span>
+                  Global IoT Map & Viewport Synchronization
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  The platform features a dedicated spatial tracking system that keeps maps synchronized across the entire application:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                  <li>Navigate to the dedicated <strong>Map</strong> page via the sidebar.</li>
+                  <li>The page displays a premium full-screen map showing all registered devices in your active workspace, alongside a searchable device list and status filters.</li>
+                  <li><strong>Bi-directional Synchronization:</strong> The dedicated Map page and the Overview dashboard's Map widget operate on a shared synchronization context. Zooming, panning, or hovering over a device on one map instantly updates the viewport and highlights of the other.</li>
                 </ul>
               </section>
             </div>
@@ -323,6 +340,7 @@ export default function ManualPage() {
                   <li>Konfigurirajte widget odabirom željenog uređaja i mjernog polja.</li>
                   <li>Povucite zaglavlje widgeta kako biste ga premjestili; koristite donji desni kut za promjenu veličine.</li>
                   <li>Kliknite <strong>Spremi izgled</strong> (Save Layout) kako biste trajno pohranili konfiguraciju.</li>
+                  <li><strong>Filtar vremenskog raspona:</strong> Koristite globalni selektor vremenskog raspona u zaglavlju nadzorne ploče za trenutnu promjenu prikaza između <strong>24 sata (24h)</strong>, <strong>7 dana (7D)</strong> i <strong>30 dana (30D)</strong>. Podaci se učitavaju dinamički optimiziranim upitima u bazu.</li>
                 </ul>
               </section>
 
@@ -340,6 +358,22 @@ export default function ManualPage() {
                   <li>Definirajte uvjet okidanja (npr. <em>Ako je Temperatura veća od (&gt;) 30°C</em>).</li>
                   <li>Odaberite akcije: stvaranje internog upozorenja, slanje e-maila ili okidanje vanjskog API webhooka.</li>
                   <li>Pratite aktivirana upozorenja na stranici <strong>Upozorenja</strong> (Alerts). Možete kliknuti <strong>Riješi</strong> (Resolve) na pojedinačnom upozorenju ili <strong>Očisti sve</strong> (Clear All) za brisanje cijele povijesti.</li>
+                </ul>
+              </section>
+
+              {/* Sekcija 7 */}
+              <section className="space-y-4">
+                <h3 className="text-xl font-bold flex items-center gap-2 text-foreground border-b pb-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">7</span>
+                  Globalna IoT karta i sinkronizacija prikaza
+                </h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  Platforma sadrži namjenski sustav za prostorno praćenje koji održava karte sinkroniziranima kroz cijelu aplikaciju:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                  <li>Otvorite namjensku stranicu <strong>Karta</strong> (Map) putem bočne trake.</li>
+                  <li>Stranica prikazuje interaktivnu kartu cijelog zaslona sa svim registriranim uređajima u aktivnom radnom prostoru, pretraživu listu uređaja i filtre statusa.</li>
+                  <li><strong>Dvosmjerna sinkronizacija:</strong> Namjenska stranica s kartom i widget karte na glavnoj nadzornoj ploči dijele zajednički kontekst. Zumiranje, pomicanje ili prijelaz mišem preko uređaja na jednoj karti trenutno ažurira fokus i prikaz druge karte.</li>
                 </ul>
               </section>
             </div>

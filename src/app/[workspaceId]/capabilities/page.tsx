@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileDown, Languages, Landmark, Clock, Activity, CheckCircle2, ShieldAlert, Cpu, Network, Sliders, Database, Bell, Eye, Lock, Layers, Plus, Mail, ArrowRight, Check } from "lucide-react";
+import { FileDown, Languages, Landmark, Clock, Activity, CheckCircle2, ShieldAlert, Cpu, Network, Sliders, Database, Bell, Eye, Lock, Layers, Plus, Mail, ArrowRight, Check, Map } from "lucide-react";
 
 export default function CapabilitiesPage() {
   const [lang, setLang] = useState<"en" | "hr">("en");
@@ -489,6 +489,47 @@ export default function CapabilitiesPage() {
                   </div>
                 </div>
 
+                {/* Feature 10: Global IoT Map & Viewport Sync */}
+                <div className="space-y-4 page-break">
+                  <h4 className="text-xl font-bold text-primary flex items-center gap-2">
+                    <Map className="h-5 w-5" />
+                    Feature 10: Global IoT Map & Viewport Synchronization
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Provides a dedicated, interactive spatial view of all deployed assets within the active workspace. Utilizing a shared synchronization context, any viewport adjustments (such as centering, zooming, or hovering on a device) made on the dedicated Map page are instantly propagated to the Overview dashboard's Map widget, and vice-versa, ensuring a cohesive geographic context.
+                  </p>
+                  <div className="pl-4 border-l-2 border-slate-700 space-y-1 text-xs text-muted-foreground">
+                    <p><strong>Step 1:</strong> Access the dedicated Map page via the sidebar to view all sensors geographically, search by name, or filter by status.</p>
+                    <p><strong>Step 2:</strong> Pan, zoom, or hover on a marker. The viewport state is globally synchronized in real-time across all active map instances in the workspace.</p>
+                  </div>
+                  {/* Mockup */}
+                  <div className="mockup-container rounded-xl border border-slate-800 bg-slate-950 p-6">
+                    <div className="max-w-md mx-auto border border-slate-800 bg-slate-900/40 rounded-lg p-5 space-y-4">
+                      <span className="font-bold text-white text-xs block">Real-Time Viewport Sync</span>
+                      <div className="grid grid-cols-2 gap-4 text-[10px]">
+                        <div className="border border-slate-800 bg-slate-950 rounded p-2.5 relative">
+                          <div className="absolute top-1.5 left-1.5 bg-indigo-500/20 text-indigo-400 px-1 rounded font-bold uppercase text-[8px]">Dashboard Map</div>
+                          <div className="h-24 w-full bg-slate-900/80 rounded flex items-center justify-center relative overflow-hidden mt-3">
+                            <div className="absolute h-3 w-3 rounded-full bg-indigo-500/30 flex items-center justify-center animate-ping" />
+                            <div className="absolute h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                          </div>
+                        </div>
+                        <div className="border border-slate-800 bg-slate-950 rounded p-2.5 relative">
+                          <div className="absolute top-1.5 left-1.5 bg-emerald-500/20 text-emerald-400 px-1 rounded font-bold uppercase text-[8px]">Dedicated Map Page</div>
+                          <div className="h-24 w-full bg-slate-900/80 rounded flex items-center justify-center relative overflow-hidden mt-3">
+                            <div className="absolute h-3 w-3 rounded-full bg-indigo-500/30 flex items-center justify-center animate-ping" />
+                            <div className="absolute h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-center text-[9px] text-indigo-400 font-semibold flex items-center justify-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">sync</span>
+                        Coordinates (Zoom: 14, Center: Zagreb) synchronized bi-directionally
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
@@ -872,6 +913,47 @@ export default function CapabilitiesPage() {
                           <span className="text-slate-300">tehnicar@tvrtka.hr</span>
                           <select className="bg-slate-950 border border-slate-800 rounded px-1.5 py-0.5 text-slate-300" defaultValue="member"><option value="admin">Admin</option><option value="member">Član</option><option value="viewer">Pregledatelj</option></select>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Značajka 10: Globalna IoT Karta i Sinkronizacija prikaza */}
+                <div className="space-y-4 page-break">
+                  <h4 className="text-xl font-bold text-primary flex items-center gap-2">
+                    <Map className="h-5 w-5" />
+                    Značajka 10: Globalna IoT karta i sinkronizacija prikaza
+                  </h4>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Nudi namjenski, interaktivni prostorni pregled svih uređaja unutar aktivnog radnog prostora. Koristeći zajednički sinkronizacijski kontekst, sve promjene prikaza (poput fokusiranja, zumiranja ili prelaska mišem) na namjenskoj stranici s kartom trenutno se prenose na widget karte na nadzornoj ploči i obrnuto.
+                  </p>
+                  <div className="pl-4 border-l-2 border-slate-700 space-y-1 text-xs text-muted-foreground">
+                    <p><strong>Korak 1:</strong> Otvorite stranicu Karta na bočnoj traci za geografski pregled senzora, pretragu i filtriranje po statusu.</p>
+                    <p><strong>Korak 2:</strong> Pomičite ili zumirajte kartu. Stanje prikaza se u stvarnom vremenu sinkronizira na svim instancama karata u radnom prostoru.</p>
+                  </div>
+                  {/* Mockup */}
+                  <div className="mockup-container rounded-xl border border-slate-800 bg-slate-950 p-6">
+                    <div className="max-w-md mx-auto border border-slate-800 bg-slate-900/40 rounded-lg p-5 space-y-4">
+                      <span className="font-bold text-white text-xs block">Sinkronizacija u stvarnom vremenu</span>
+                      <div className="grid grid-cols-2 gap-4 text-[10px]">
+                        <div className="border border-slate-800 bg-slate-950 rounded p-2.5 relative">
+                          <div className="absolute top-1.5 left-1.5 bg-indigo-500/20 text-indigo-400 px-1 rounded font-bold uppercase text-[8px]">Karta na nadzornoj ploči</div>
+                          <div className="h-24 w-full bg-slate-900/80 rounded flex items-center justify-center relative overflow-hidden mt-3">
+                            <div className="absolute h-3 w-3 rounded-full bg-indigo-500/30 flex items-center justify-center animate-ping" />
+                            <div className="absolute h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                          </div>
+                        </div>
+                        <div className="border border-slate-800 bg-slate-950 rounded p-2.5 relative">
+                          <div className="absolute top-1.5 left-1.5 bg-emerald-500/20 text-emerald-400 px-1 rounded font-bold uppercase text-[8px]">Namjenska stranica s kartom</div>
+                          <div className="h-24 w-full bg-slate-900/80 rounded flex items-center justify-center relative overflow-hidden mt-3">
+                            <div className="absolute h-3 w-3 rounded-full bg-indigo-500/30 flex items-center justify-center animate-ping" />
+                            <div className="absolute h-1.5 w-1.5 rounded-full bg-indigo-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-center text-[9px] text-indigo-400 font-semibold flex items-center justify-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">sync</span>
+                        Koordinate (Zoom: 14, Centar: Zagreb) sinkronizirane obostrano
                       </div>
                     </div>
                   </div>
