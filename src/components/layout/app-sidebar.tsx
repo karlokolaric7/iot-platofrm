@@ -58,6 +58,7 @@ export function AppSidebar() {
   // Flat menu structure dynamically translated
   const navItems = [
     { label: t("sidebar.overview"), href: `/${workspaceId}/dashboards`, icon: "dashboard" },
+    { label: t("sidebar.map"), href: `/${workspaceId}/map`, icon: "map" },
     { label: t("sidebar.devices"), href: `/${workspaceId}/devices`, icon: "router" },
     { label: t("sidebar.gateways"), href: `/${workspaceId}/gateways`, icon: "hub" },
     { label: t("sidebar.ruleEngine"), href: `/${workspaceId}/rules`, icon: "bolt" },

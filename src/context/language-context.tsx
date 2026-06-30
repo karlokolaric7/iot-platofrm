@@ -32,7 +32,8 @@ const translations = {
       active: "Active",
       addWorkspace: "Add Workspace",
       userManual: "User Manual",
-      capabilities: "Platform Capabilities"
+      capabilities: "Platform Capabilities",
+      map: "Geographical Map"
     },
     header: {
       searchPlaceholder: "Search devices, alerts, rules... (Ctrl+K)",
@@ -130,7 +131,8 @@ const translations = {
       active: "Aktivno",
       addWorkspace: "Dodaj radni prostor",
       userManual: "Korisnički priručnik",
-      capabilities: "Mogućnosti platforme"
+      capabilities: "Mogućnosti platforme",
+      map: "Geografska karta"
     },
     header: {
       searchPlaceholder: "Pretraži uređaje, upozorenja, pravila... (Ctrl+K)",

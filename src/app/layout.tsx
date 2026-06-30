@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { LanguageProvider } from "@/context/language-context";
+import { MapSyncProvider } from "@/context/map-sync-context";
 
 export default function RootLayout({
   children,
@@ -43,10 +44,12 @@ export default function RootLayout({
         >
           <QueryProvider>
             <LanguageProvider>
-              <TooltipProvider delay={0}>
-                {children}
-                <Toaster />
-              </TooltipProvider>
+              <MapSyncProvider>
+                <TooltipProvider delay={0}>
+                  {children}
+                  <Toaster />
+                </TooltipProvider>
+              </MapSyncProvider>
             </LanguageProvider>
           </QueryProvider>
         </ThemeProvider>

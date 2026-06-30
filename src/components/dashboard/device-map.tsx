@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Device } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { useMapSync } from "@/context/map-sync-context";
 
 interface DeviceMapProps {
   devices: Device[];
@@ -17,8 +18,19 @@ export function DeviceMap({ devices, className }: DeviceMapProps) {
   const router = useRouter();
   const params = useParams();
   const workspaceId = params.workspaceId as string;
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  
+  const { 
+    center: syncCenter, 
+    zoom: syncZoom, 
+    hoveredDeviceId, 
+    setCenter: setSyncCenter, 
+    setZoom: setSyncZoom, 
+    setHoveredDeviceId 
+  } = useMapSync();
+
+  const hoveredId = hoveredDeviceId;
+  const setHoveredId = setHoveredDeviceId;
 
   // Ensure the component only renders on the client to avoid hydration mismatches
   // with theme-based tile providers and event listener attachment.
@@ -36,15 +48,22 @@ export function DeviceMap({ devices, className }: DeviceMapProps) {
   
   const markers = devices.filter(d => d.latitude !== null && d.longitude !== null && d.latitude !== undefined && d.longitude !== undefined);
   const defaultCenter: [number, number] = [45.8150, 15.9819];
-  const center: [number, number] = markers.length > 0 ? [markers[0].latitude!, markers[0].longitude!] : defaultCenter;
+  const initialCenter: [number, number] = markers.length > 0 ? [markers[0].latitude!, markers[0].longitude!] : defaultCenter;
+  
+  const currentCenter = syncCenter || initialCenter;
+  const currentZoom = syncZoom;
   const isDark = theme === "dark";
 
   return (
     <div className={cn("relative w-full h-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50", className)}>
       <Map 
         height={320} 
-        defaultCenter={center} 
-        defaultZoom={11}
+        center={currentCenter} 
+        zoom={currentZoom}
+        onBoundsChanged={({ center, zoom }) => {
+          setSyncCenter(center);
+          setSyncZoom(zoom);
+        }}
         provider={(x, y, z, dpr) => {
           const s = String.fromCharCode(97 + ((x + y + z) % 3));
           const retinaSuffix = dpr && dpr >= 2 ? "@2x" : "";
