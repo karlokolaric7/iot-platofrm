@@ -181,6 +181,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger className="w-full outline-none border-none text-left">
                 <SidebarMenuButton 
+                  render={<div />}
                   tooltip={t("sidebar.support")} 
                   className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all duration-150 ease-in-out h-auto font-normal w-full"
                 >
@@ -220,6 +221,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger className="w-full outline-none border-none text-left">
                 <SidebarMenuButton 
+                  render={<div />}
                   tooltip={t("sidebar.account")} 
                   className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900/50 cursor-pointer transition-all duration-150 ease-in-out h-auto font-normal w-full"
                 >
