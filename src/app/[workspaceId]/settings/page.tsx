@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWorkspace, useUpdateWorkspace } from "@/hooks/use-iot-data";
+import { useWorkspace, useUpdateWorkspace, useDeleteWorkspace } from "@/hooks/use-iot-data";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -25,6 +25,7 @@ export default function WorkspaceSettingsPage() {
   
   const { data: workspace, isLoading } = useWorkspace(workspaceId);
   const updateMutation = useUpdateWorkspace();
+  const deleteMutation = useDeleteWorkspace();
 
   const [wsName, setWsName] = useState("");
   const [wsSlug, setWsSlug] = useState("");
@@ -66,9 +67,18 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
-  const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this workspace? All data will be permanently lost.")) {
-      toast.error("Workspace deletion is currently disabled for safety.");
+  const handleDelete = async () => {
+    if (!workspace) return;
+    if (!confirm("Are you sure you want to delete this workspace? All data, devices, and dashboards will be permanently lost. This action is irreversible.")) {
+      return;
+    }
+
+    try {
+      await deleteMutation.mutateAsync(workspace.id);
+      toast.success("Workspace deleted successfully");
+      router.push("/");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete workspace");
     }
   };
 
@@ -239,8 +249,13 @@ export default function WorkspaceSettingsPage() {
                   Permanently remove this workspace and all associated devices, dashboards and data.
                 </p>
               </div>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
-                Delete
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete Workspace"}
               </Button>
             </div>
           </CardContent>

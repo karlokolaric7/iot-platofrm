@@ -1,7 +1,7 @@
 /* Custom styles for react-grid-layout */
 .react-grid-layout {
   position: relative;
-  transition: height 200ms ease;
+  transition: height 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Helper Grid Background wrapper (visible in edit mode) */
@@ -9,6 +9,8 @@
   border-radius: var(--radius-xl);
   position: relative;
   overflow: hidden;
+  background: var(--bg-grid-active, transparent);
+  transition: all 300ms ease;
 }
 
 .dynamic-grid-bg {
@@ -18,8 +20,8 @@
   z-index: 0;
   --grid-row: 52px; /* 40px rowHeight + 12px margin */
   background-image: 
-    linear-gradient(to right, hsl(var(--foreground) / 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, hsl(var(--foreground) / 0.03) 1px, transparent 1px);
+    linear-gradient(to right, hsl(var(--primary) / 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--primary) / 0.04) 1px, transparent 1px);
   background-size: calc((100% - 12px) / 12) var(--grid-row);
   background-position: 6px 6px;
   opacity: 1;
@@ -29,36 +31,39 @@
   content: "";
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle at 1.5px 1.5px, hsl(var(--foreground) / 0.1) 1.5px, transparent 0);
+  background-image: radial-gradient(circle at 1.5px 1.5px, hsl(var(--primary) / 0.15) 1.5px, transparent 0);
   background-size: calc((100% - 12px) / 12) var(--grid-row);
   background-position: 5px 5px;
 }
 
 .react-grid-item {
-  transition: all 200ms ease;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   transition-property: left, top, width, height;
 }
 
-.react-grid-item.resizing {
-  z-index: 1000;
-  will-change: width, height;
-}
-
+/* CRITICAL: Disable transitions during drag & resize to prevent lagging behind the cursor */
 .react-grid-item.react-draggable-dragging {
-  transition: none;
+  transition: none !important;
   z-index: 1000;
   will-change: left, top;
+}
+
+.react-grid-item.resizing {
+  transition: none !important;
+  z-index: 1000;
+  will-change: width, height;
 }
 
 .react-grid-item.dropping {
   visibility: hidden;
 }
 
-/* Premium Placeholder */
+/* Premium Glassmorphic Placeholder */
 .react-grid-placeholder {
-  background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--primary) / 0.03)) !important;
-  border-radius: var(--radius-xl) !important;
-  border: 2px dashed hsl(var(--primary) / 0.15) !important;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.12), hsl(var(--primary) / 0.03)) !important;
+  border-radius: 16px !important;
+  border: 2px dashed hsl(var(--primary) / 0.4) !important;
+  box-shadow: 0 0 20px 0 hsl(var(--primary) / 0.1) !important;
   user-select: none;
   z-index: 1 !important;
   transition: all 150ms ease-out !important;
@@ -67,41 +72,42 @@
 }
 
 @keyframes placeholderPulse {
-  0% { transform: scale(0.99); opacity: 0.6; }
+  0% { transform: scale(0.985); opacity: 0.7; }
   50% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0.99); opacity: 0.6; }
+  100% { transform: scale(0.985); opacity: 0.7; }
 }
 
 .widget-container {
   display: flex !important;
   flex-direction: column;
+  height: 100%;
 }
 
 /* Modern Resize Handles */
 .react-resizable-handle {
   opacity: 0;
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 20;
 }
 
 .is-editable {
-  user-select: none; /* Prevent accidental text highlighting during drag/resize */
+  user-select: none;
 }
 
 .is-editable .react-resizable-handle {
-  opacity: 0.4; /* Visible in edit mode */
+  opacity: 0.5;
 }
 
 .react-grid-item:hover .react-resizable-handle {
   opacity: 1 !important;
 }
 
-/* Professional Corner Grip (Datacake style) - South West (Bottom Left) */
+/* Diagonal Grip - South West (Bottom Left) */
 .react-resizable-handle-sw {
-  width: 24px;
-  height: 24px;
-  bottom: 0px !important;
-  left: 0px !important;
+  width: 20px;
+  height: 20px;
+  bottom: 4px !important;
+  left: 4px !important;
   cursor: sw-resize;
   background: transparent;
 }
@@ -109,40 +115,28 @@
 .react-resizable-handle-sw::after {
   content: "";
   position: absolute;
-  left: 6px;
-  bottom: 6px;
-  width: 12px;
-  height: 12px;
-  /* Flipped Diagonal Grip Lines for Bottom-Left */
-  background: linear-gradient(
-    -135deg,
-    transparent 45%,
-    hsl(var(--primary)) 45%,
-    hsl(var(--primary)) 55%,
-    transparent 55%,
-    transparent 70%,
-    hsl(var(--primary)) 70%,
-    hsl(var(--primary)) 80%,
-    transparent 80%
-  );
-  transition: all 200ms ease;
-  opacity: 0.7;
+  left: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-left: 2px solid hsl(var(--primary));
+  border-bottom: 2px solid hsl(var(--primary));
+  transition: all 150ms ease;
+  opacity: 0.6;
 }
 
 .react-resizable-handle-sw:hover::after {
   opacity: 1;
-  transform: scale(1.1) translate(1px, -1px);
+  width: 12px;
+  height: 12px;
 }
 
-
-
-
-/* Professional Corner Grip - South East (Bottom Right) */
+/* Diagonal Grip - South East (Bottom Right) */
 .react-resizable-handle-se {
-  width: 24px;
-  height: 24px;
-  bottom: 0px !important;
-  right: 0px !important;
+  width: 20px;
+  height: 20px;
+  bottom: 4px !important;
+  right: 4px !important;
   cursor: se-resize;
   background: transparent;
 }
@@ -150,34 +144,29 @@
 .react-resizable-handle-se::after {
   content: "";
   position: absolute;
-  right: 6px;
-  bottom: 6px;
-  width: 12px;
-  height: 12px;
-  /* Diagonal Grip Lines for Bottom-Right */
-  background: linear-gradient(
-    135deg,
-    transparent 45%,
-    hsl(var(--primary)) 45%,
-    hsl(var(--primary)) 55%,
-    transparent 55%,
-    transparent 70%,
-    hsl(var(--primary)) 70%,
-    hsl(var(--primary)) 80%,
-    transparent 80%
-  );
-  transition: all 200ms ease;
-  opacity: 0.7;
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid hsl(var(--primary));
+  border-bottom: 2px solid hsl(var(--primary));
+  transition: all 150ms ease;
+  opacity: 0.6;
 }
 
 .react-resizable-handle-se:hover::after {
   opacity: 1;
-  transform: scale(1.1) translate(-1px, -1px);
+  width: 12px;
+  height: 12px;
 }
 
-/* Remove awful black squares from previous attempt */
+/* Clean up unused handles */
 .react-resizable-handle-e,
-.react-resizable-handle-s {
+.react-resizable-handle-s,
+.react-resizable-handle-n,
+.react-resizable-handle-w,
+.react-resizable-handle-nw,
+.react-resizable-handle-ne {
   display: none !important;
 }
 

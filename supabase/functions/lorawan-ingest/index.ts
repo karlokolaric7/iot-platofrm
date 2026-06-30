@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 // @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.11.0"
+import { ipLimiter, deviceLimiter } from "../_shared/rate-limiter.ts"
+import { sendAlertNotifications } from "../_shared/notification-sender.ts"
 
 // @ts-ignore
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'http://host.docker.internal:54321'
@@ -11,8 +13,39 @@ const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 serve(async (req: Request) => {
+  let device: any = null
+  let payload: any = null
   try {
-    const payload = await req.json()
+    // ─── IP-based Rate Limiting ───────────────────────────────────────────────
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown'
+    const ipCheck = ipLimiter.consume(ip)
+    if (!ipCheck.allowed) {
+      console.warn(`[lorawan-ingest] Rate limit exceeded for IP: ${ip}`)
+      return new Response(JSON.stringify({ error: 'Too Many Requests' }), { 
+        status: 429, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Retry-After': Math.ceil(ipCheck.resetMs / 1000).toString() 
+        } 
+      })
+    }
+
+    // ─── Token Verification ────────────────────────────────────────────────────
+    const url = new URL(req.url)
+    const queryToken = url.searchParams.get('token')
+    const headerToken = req.headers.get('x-ingest-token') || 
+                        req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+
+    const expectedToken = Deno.env.get('INGEST_TOKEN')
+
+    if (expectedToken) {
+      if (queryToken !== expectedToken && headerToken !== expectedToken) {
+        console.warn('[lorawan-ingest] Unauthorized request: Invalid or missing token')
+        return new Response(JSON.stringify({ error: 'Unauthorized: Invalid or missing token' }), { status: 401 })
+      }
+    }
+
+    payload = await req.json()
     console.log("Received ChirpStack payload:", JSON.stringify(payload, null, 2))
 
     const devEui = payload.deviceInfo?.devEui
@@ -22,17 +55,48 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: "Missing devEui" }), { status: 400 })
     }
 
+    // ─── DevEUI-based Rate Limiting ───────────────────────────────────────────
+    const deviceCheck = deviceLimiter.consume(devEui)
+    if (!deviceCheck.allowed) {
+      console.warn(`[lorawan-ingest] Rate limit exceeded for DevEUI: ${devEui}`)
+      return new Response(JSON.stringify({ error: 'Too Many Requests' }), { 
+        status: 429, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Retry-After': Math.ceil(deviceCheck.resetMs / 1000).toString() 
+        } 
+      })
+    }
+
     // 1. Find the device
-    const { data: device, error: deviceErr } = await supabase
+    const { data: foundDevice, error: deviceErr } = await supabase
       .from('devices')
-      .select('id, workspace_id')
+      .select('id, workspace_id, name')
       .ilike('dev_eui', devEui)
       .single()
 
-    if (deviceErr || !device) {
+    if (deviceErr || !foundDevice) {
       console.error(`Device not found for DevEUI: ${devEui}`, deviceErr)
-      return new Response(JSON.stringify({ error: "Device not found" }), { status: 404 })
+      
+      // Log to DLQ
+      try {
+        await supabase.from('failed_ingest_logs').insert({
+          dev_eui: devEui,
+          event_type: 'lorawan',
+          f_port: payload?.fPort || payload?.deviceInfo?.fPort || null,
+          f_cnt: payload?.fCnt || null,
+          raw_payload: payload,
+          error_message: `Device not found for DevEUI: ${devEui}`,
+          device_id: null,
+          workspace_id: null,
+        })
+      } catch (logErr) {
+        console.error("[lorawan-ingest] Failed to write to failed_ingest_logs:", logErr)
+      }
+
+      return new Response(JSON.stringify({ error: `Device not found for DevEUI: ${devEui}` }), { status: 404 })
     }
+    device = foundDevice
 
     // 2. Insert into device_logs regardless of fields
     const { error: logErr } = await supabase
@@ -86,7 +150,7 @@ serve(async (req: Request) => {
         
         if (insertErr) {
           console.error("Error inserting measurements:", insertErr)
-          return new Response(JSON.stringify({ error: "Insert failed" }), { status: 500 })
+          throw new Error(`Failed to insert measurements: ${insertErr.message}`)
         }
 
         // 4. Rule Engine Evaluation
@@ -129,19 +193,25 @@ serve(async (req: Request) => {
               console.log(`Rule triggered: ${rule.name}`)
               
               // Create Alert record
-              await supabase.from('alerts').insert({
-                workspace_id: device.workspace_id,
-                device_id: device.id,
-                rule_id: rule.id,
-                severity: 'warning',
-                title: rule.name,
-                message: triggerMessage || rule.description || "Threshold exceeded",
-              })
+              const { data: alert, error: alertErr } = await supabase
+                .from('alerts')
+                .insert({
+                  workspace_id: device.workspace_id,
+                  device_id: device.id,
+                  rule_id: rule.id,
+                  severity: 'warning',
+                  title: rule.name,
+                  message: triggerMessage || rule.description || "Threshold exceeded",
+                })
+                .select()
+                .single()
 
-              // Update Rule Stats (we don't have triggerCount in DB schema yet based on migration 20240316, 
-              // but we can update updated_at or just skip if field missing)
-              // Actually, migration 20240316 doesn't have trigger_count.
-              // I'll just update updated_at for now.
+              if (!alertErr && alert) {
+                sendAlertNotifications(rule, alert, device.name).catch((err) => {
+                  console.error('[lorawan-ingest] Failed to send alert notifications:', err)
+                })
+              }
+
               await supabase.from('rules').update({
                 updated_at: new Date().toISOString()
               }).eq('id', rule.id)
@@ -154,6 +224,24 @@ serve(async (req: Request) => {
     return new Response(JSON.stringify({ success: true, count: measurements.length }), { status: 200 })
   } catch (err: any) {
     console.error("Ingest Exception:", err)
+
+    // Insert into failed_ingest_logs (DLQ)
+    try {
+      const devEui = payload?.deviceInfo?.devEui || null
+      await supabase.from('failed_ingest_logs').insert({
+        dev_eui: devEui,
+        event_type: 'lorawan',
+        f_port: payload?.fPort || payload?.deviceInfo?.fPort || null,
+        f_cnt: payload?.fCnt || null,
+        raw_payload: payload || { error: 'Failed to parse raw payload or request crashed before parsing' },
+        error_message: err.message || String(err),
+        device_id: device?.id || null,
+        workspace_id: device?.workspace_id || null,
+      })
+    } catch (logErr) {
+      console.error("[lorawan-ingest] Failed to write to failed_ingest_logs:", logErr)
+    }
+
     return new Response(JSON.stringify({ error: err.message }), { status: 500 })
   }
 })

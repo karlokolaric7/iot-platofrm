@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Zap, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Database } from "@/lib/database.types";
+import { Database } from "@/lib/supabase/database.types";
 
 type Rule = Database['public']['Tables']['rules']['Row'];
 
@@ -32,7 +32,7 @@ interface RuleDialogProps {
   rule?: Rule;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  trigger?: React.ReactNode;
+  trigger?: React.ReactElement;
 }
 
 const OPERATORS = [
@@ -46,6 +46,7 @@ const OPERATORS = [
 
 const ACTION_TYPES = [
   { label: "Send Email", value: "email" },
+  { label: "Send SMS", value: "sms" },
   { label: "In-App Notification", value: "in_app" },
   { label: "Webhook Call", value: "webhook" },
 ];
@@ -209,7 +210,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label className="text-xs">Device</Label>
-                  <Select value={selectedDeviceId} onValueChange={setSelectedDeviceId}>
+                  <Select value={selectedDeviceId} onValueChange={(val) => setSelectedDeviceId(val || "")}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select device">
                         {selectedDevice ? selectedDevice.name : "Select device"}
@@ -228,7 +229,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
                   <Label className="text-xs">Field</Label>
                   <Select 
                     value={selectedFieldId} 
-                    onValueChange={setSelectedFieldId}
+                    onValueChange={(val) => setSelectedFieldId(val || "")}
                     disabled={!selectedDeviceId}
                   >
                     <SelectTrigger>
@@ -252,7 +253,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label className="text-xs">Operator</Label>
-                  <Select value={operator} onValueChange={setOperator}>
+                  <Select value={operator} onValueChange={(val) => setOperator(val || "")}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -287,7 +288,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
                   <Label className="text-xs">Action Type</Label>
-                  <Select value={actionType} onValueChange={setActionType}>
+                  <Select value={actionType} onValueChange={(val) => setActionType(val || "")}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -303,7 +304,15 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
                 <div className="grid gap-1.5">
                   <Label className="text-xs">Target</Label>
                   <Input
-                    placeholder={actionType === "email" ? "email@example.com" : "Target identifier"}
+                    placeholder={
+                      actionType === "email"
+                        ? "email@example.com"
+                        : actionType === "sms"
+                        ? "+1234567890"
+                        : actionType === "webhook"
+                        ? "https://discord.com/api/webhooks/..."
+                        : "Target identifier"
+                    }
                     value={actionTarget}
                     onChange={(e) => setActionTarget(e.target.value)}
                     disabled={actionType === "in_app"}

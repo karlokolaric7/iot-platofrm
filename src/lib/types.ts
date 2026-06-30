@@ -188,3 +188,18 @@ export interface Dashboard {
   created_at: string;
   updated_at: string;
 }
+
+// ========================
+// Device Downlinks
+// ========================
+export interface DeviceDownlink {
+  id: string;
+  device_id: string;
+  f_port: number;
+  payload_raw: string;
+  payload_type: "hex" | "base64" | "text";
+  confirmed: boolean;
+  status: "pending" | "sent" | "cancelled";
+  created_at: string;
+  sent_at?: string;
+}

@@ -450,13 +450,13 @@ export default function DigitalTwinPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
+    reader.onload = () => {
+      if (reader.result) {
         const newName = prompt(language === "hr" ? "Unesite naziv novog radnog prostora:" : "Enter name for the new workspace:") || "New Workspace";
         const newWorkspace: TwinWorkspace = {
           id: Date.now().toString(),
           name: newName,
-          layoutImage: event.target.result as string,
+          layoutImage: reader.result as string,
           placedDevices: []
         };
         setWorkspaces(prev => [...prev, newWorkspace]);
@@ -479,11 +479,11 @@ export default function DigitalTwinPage() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
+    reader.onload = () => {
+      if (reader.result) {
         setWorkspaces(prev => prev.map(w => {
           if (w.id === activeWorkspaceId) {
-            return { ...w, layoutImage: event.target.result as string };
+            return { ...w, layoutImage: reader.result as string };
           }
           return w;
         }));

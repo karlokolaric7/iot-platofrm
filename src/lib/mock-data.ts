@@ -161,16 +161,16 @@ export const MOCK_DEVICES: Device[] = [
 // Device Fields
 // ========================
 export const MOCK_FIELDS: DeviceField[] = [
-  { id: "f-1", deviceId: "dev-1", name: "temperature", alias: "Temperature", unit: "°C", type: "number", color: "#ef4444", showOnDashboard: true, lastValue: 87.3, lastValueAt: "2026-03-16T07:45:00Z" },
-  { id: "f-2", deviceId: "dev-1", name: "pressure", alias: "Pressure", unit: "bar", type: "number", color: "#3b82f6", showOnDashboard: true, lastValue: 4.2, lastValueAt: "2026-03-16T07:45:00Z" },
-  { id: "f-3", deviceId: "dev-1", name: "battery", alias: "Battery Level", unit: "%", type: "number", color: "#22c55e", showOnDashboard: false, lastValue: 72, lastValueAt: "2026-03-16T07:45:00Z" },
-  { id: "f-4", deviceId: "dev-2", name: "humidity", alias: "Humidity", unit: "%", type: "number", color: "#06b6d4", showOnDashboard: true, lastValue: 63.5, lastValueAt: "2026-03-16T07:44:30Z" },
-  { id: "f-5", deviceId: "dev-2", name: "temperature", alias: "Temperature", unit: "°C", type: "number", color: "#f59e0b", showOnDashboard: true, lastValue: 21.8, lastValueAt: "2026-03-16T07:44:30Z" },
-  { id: "f-6", deviceId: "dev-4", name: "vibration_x", alias: "Vibration X-axis", unit: "mm/s", type: "number", color: "#a855f7", showOnDashboard: true, lastValue: 12.7, lastValueAt: "2026-03-16T07:30:00Z" },
-  { id: "f-7", deviceId: "dev-4", name: "vibration_y", alias: "Vibration Y-axis", unit: "mm/s", type: "number", color: "#ec4899", showOnDashboard: true, lastValue: 9.1, lastValueAt: "2026-03-16T07:30:00Z" },
-  { id: "f-8", deviceId: "dev-5", name: "wind_speed", alias: "Wind Speed", unit: "km/h", type: "number", color: "#14b8a6", showOnDashboard: true, lastValue: 23.4, lastValueAt: "2026-03-16T07:43:00Z" },
-  { id: "f-9", deviceId: "dev-5", name: "rain_mm", alias: "Rainfall", unit: "mm", type: "number", color: "#6366f1", showOnDashboard: true, lastValue: 0.0, lastValueAt: "2026-03-16T07:43:00Z" },
-  { id: "f-10", deviceId: "dev-6", name: "count", alias: "Unit Count", unit: "units", type: "number", color: "#10b981", showOnDashboard: true, lastValue: 4812, lastValueAt: "2026-03-16T07:46:00Z" },
+  { id: "f-1", device_id: "dev-1", name: "temperature", alias: "Temperature", unit: "°C", type: "number", color: "#ef4444", show_on_dashboard: true, last_value: 87.3, last_value_at: "2026-03-16T07:45:00Z" },
+  { id: "f-2", device_id: "dev-1", name: "pressure", alias: "Pressure", unit: "bar", type: "number", color: "#3b82f6", show_on_dashboard: true, last_value: 4.2, last_value_at: "2026-03-16T07:45:00Z" },
+  { id: "f-3", device_id: "dev-1", name: "battery", alias: "Battery Level", unit: "%", type: "number", color: "#22c55e", show_on_dashboard: false, last_value: 72, last_value_at: "2026-03-16T07:45:00Z" },
+  { id: "f-4", device_id: "dev-2", name: "humidity", alias: "Humidity", unit: "%", type: "number", color: "#06b6d4", show_on_dashboard: true, last_value: 63.5, last_value_at: "2026-03-16T07:44:30Z" },
+  { id: "f-5", device_id: "dev-2", name: "temperature", alias: "Temperature", unit: "°C", type: "number", color: "#f59e0b", show_on_dashboard: true, last_value: 21.8, last_value_at: "2026-03-16T07:44:30Z" },
+  { id: "f-6", device_id: "dev-4", name: "vibration_x", alias: "Vibration X-axis", unit: "mm/s", type: "number", color: "#a855f7", show_on_dashboard: true, last_value: 12.7, last_value_at: "2026-03-16T07:30:00Z" },
+  { id: "f-7", device_id: "dev-4", name: "vibration_y", alias: "Vibration Y-axis", unit: "mm/s", type: "number", color: "#ec4899", show_on_dashboard: true, last_value: 9.1, last_value_at: "2026-03-16T07:30:00Z" },
+  { id: "f-8", device_id: "dev-5", name: "wind_speed", alias: "Wind Speed", unit: "km/h", type: "number", color: "#14b8a6", show_on_dashboard: true, last_value: 23.4, last_value_at: "2026-03-16T07:43:00Z" },
+  { id: "f-9", device_id: "dev-5", name: "rain_mm", alias: "Rainfall", unit: "mm", type: "number", color: "#6366f1", show_on_dashboard: true, last_value: 0.0, last_value_at: "2026-03-16T07:43:00Z" },
+  { id: "f-10", device_id: "dev-6", name: "count", alias: "Unit Count", unit: "units", type: "number", color: "#10b981", show_on_dashboard: true, last_value: 4812, last_value_at: "2026-03-16T07:46:00Z" },
 ];
 
 // ========================
@@ -179,10 +179,8 @@ export const MOCK_FIELDS: DeviceField[] = [
 export const MOCK_DECODERS: PayloadDecoder[] = [
   {
     id: "pd-1",
-    deviceId: "dev-1",
-    name: "LoRaWAN Boiler Decoder",
-    enabled: true,
-    script: `// Boiler Sensor Payload Decoder
+    device_id: "dev-1",
+    code: `// Boiler Sensor Payload Decoder
 // Input: bytes (Uint8Array), port (number)
 // Output: object with field names as keys
 
@@ -197,15 +195,14 @@ function Decoder(bytes, port) {
     battery: battery,
   };
 }`,
-    createdAt: "2025-02-01T12:00:00Z",
-    updatedAt: "2025-03-10T09:30:00Z",
+    is_active: true,
+    created_at: "2025-02-01T12:00:00Z",
+    updated_at: "2025-03-10T09:30:00Z",
   },
   {
     id: "pd-2",
-    deviceId: "dev-2",
-    name: "Humidity Node Decoder",
-    enabled: true,
-    script: `// Humidity/Temp Sensor Payload Decoder
+    device_id: "dev-2",
+    code: `// Humidity/Temp Sensor Payload Decoder
 function Decoder(bytes, port) {
   const humidity = ((bytes[0] << 8) | bytes[1]) / 100.0;
   const temperature = (((bytes[2] << 8) | bytes[3]) - 4000) / 100.0;
@@ -215,8 +212,9 @@ function Decoder(bytes, port) {
     temperature: temperature,
   };
 }`,
-    createdAt: "2025-02-05T10:00:00Z",
-    updatedAt: "2025-02-05T10:00:00Z",
+    is_active: true,
+    created_at: "2025-02-05T10:00:00Z",
+    updated_at: "2025-02-05T10:00:00Z",
   },
 ];
 
@@ -308,75 +306,77 @@ export const MOCK_RULES: Rule[] = [
 export const MOCK_DASHBOARDS: Dashboard[] = [
   {
     id: "dash-1",
-    workspaceId: "ws-1",
+    workspace_id: "ws-1",
     name: "Factory Overview",
     description: "Main operational dashboard for factory floor",
-    isPublic: false,
+    layout: {},
+    settings: {},
     widgets: [
       {
         id: "w-1",
-        dashboardId: "dash-1",
+        dashboard_id: "dash-1",
         type: "gauge",
         title: "Boiler Temperature",
-        deviceId: "dev-1",
-        fieldId: "f-1",
+        device_id: "dev-1",
+        field_id: "f-1",
         config: { min: 0, max: 120, color: "#ef4444", unit: "°C" },
-        layout: { x: 0, y: 0, w: 4, h: 6 },
+        x: 0, y: 0, w: 4, h: 6,
       },
       {
         id: "w-2",
-        dashboardId: "dash-1",
+        dashboard_id: "dash-1",
         type: "value_display",
         title: "Boiler Pressure",
-        deviceId: "dev-1",
-        fieldId: "f-2",
+        device_id: "dev-1",
+        field_id: "f-2",
         config: { color: "#3b82f6" },
-        layout: { x: 4, y: 0, w: 2, h: 4 },
+        x: 4, y: 0, w: 2, h: 4,
       },
       {
         id: "w-3",
-        dashboardId: "dash-1",
+        dashboard_id: "dash-1",
         type: "line_chart",
         title: "Humidity History",
-        deviceId: "dev-2",
-        fieldId: "f-4",
+        device_id: "dev-2",
+        field_id: "f-4",
         config: { color: "#06b6d4" },
-        layout: { x: 0, y: 6, w: 6, h: 6 },
+        x: 0, y: 6, w: 6, h: 6,
       },
       {
         id: "w-4",
-        dashboardId: "dash-1",
+        dashboard_id: "dash-1",
         type: "status_bubble",
         title: "Production Line",
-        deviceId: "dev-6",
-        fieldId: "f-10",
+        device_id: "dev-6",
+        field_id: "f-10",
         config: { label: "Running" },
-        layout: { x: 6, y: 0, w: 3, h: 3 },
+        x: 6, y: 0, w: 3, h: 3,
       },
     ],
-    createdAt: "2025-02-01T12:00:00Z",
-    updatedAt: "2026-03-15T08:00:00Z",
+    created_at: "2025-02-01T12:00:00Z",
+    updated_at: "2026-03-15T08:00:00Z",
   },
   {
     id: "dash-2",
-    workspaceId: "ws-1",
+    workspace_id: "ws-1",
     name: "Boiler Room Detail",
     description: "Detailed monitoring for boiler room sensors",
-    isPublic: false,
+    layout: {},
+    settings: {},
     widgets: [
       {
         id: "w-5",
-        dashboardId: "dash-2",
+        dashboard_id: "dash-2",
         type: "line_chart",
         title: "Temperature Trends",
-        deviceId: "dev-1",
-        fieldId: "f-1",
+        device_id: "dev-1",
+        field_id: "f-1",
         config: { color: "#ef4444" },
-        layout: { x: 0, y: 0, w: 12, h: 8 },
+        x: 0, y: 0, w: 12, h: 8,
       },
     ],
-    createdAt: "2025-03-01T10:00:00Z",
-    updatedAt: "2026-03-16T07:00:00Z",
+    created_at: "2025-03-01T10:00:00Z",
+    updated_at: "2026-03-16T07:00:00Z",
   },
 ];
 
@@ -384,9 +384,9 @@ export const MOCK_DASHBOARDS: Dashboard[] = [
 // Utility helpers
 // ========================
 export function getDeviceFields(deviceId: string): DeviceField[] {
-  return MOCK_FIELDS.filter((f) => f.deviceId === deviceId);
+  return MOCK_FIELDS.filter((f) => f.device_id === deviceId);
 }
 
 export function getDeviceDecoder(deviceId: string): PayloadDecoder | undefined {
-  return MOCK_DECODERS.find((d) => d.deviceId === deviceId);
+  return MOCK_DECODERS.find((d) => d.device_id === deviceId);
 }

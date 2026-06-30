@@ -66,6 +66,8 @@ export function AppSidebar() {
     { label: t("sidebar.alerts"), href: `/${workspaceId}/alerts`, icon: "notifications_active" },
     { label: t("sidebar.members"), href: `/${workspaceId}/members`, icon: "group" },
     { label: t("sidebar.apiSettings"), href: `/${workspaceId}/api`, icon: "key" },
+    { label: t("sidebar.userManual"), href: `/${workspaceId}/manual`, icon: "menu_book" },
+    { label: t("sidebar.capabilities"), href: `/${workspaceId}/capabilities`, icon: "analytics" },
     { label: t("sidebar.workspace"), href: `/${workspaceId}/settings`, icon: "settings" },
   ];
 

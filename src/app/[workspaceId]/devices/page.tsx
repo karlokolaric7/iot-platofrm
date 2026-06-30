@@ -75,6 +75,11 @@ export default function DevicesPage({
 }) {
   const { workspaceId } = use(params);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [connectivityFilter, setConnectivityFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("name-asc");
+  const [showFilters, setShowFilters] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -104,25 +109,72 @@ export default function DevicesPage({
     const mergedLastSeen = csDevice?.lastSeenAt || d.last_seen;
     return {
       ...d,
-      status: isDeviceOnline(mergedLastSeen) ? "online" : "offline",
+      status: (isDeviceOnline(mergedLastSeen) ? "online" : "offline") as Device["status"],
       last_seen: mergedLastSeen,
       isLive: !!csDevice
     };
   });
 
-  const filteredDevices = processedDevices.filter(
-    (d) =>
+  const filteredDevices = processedDevices.filter((d) => {
+    // Search match
+    const matchesSearch =
       (d.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      d.serial_number?.toLowerCase().includes(search.toLowerCase()) ||
-      d.dev_eui?.toLowerCase().includes(search.toLowerCase()) ||
-      (d.tags || []).some((t: string) => t.toLowerCase().includes(search.toLowerCase()))
-  );
+      (d.serial_number || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.dev_eui || "").toLowerCase().includes(search.toLowerCase()) ||
+      (d.tags || []).some((t: string) => t.toLowerCase().includes(search.toLowerCase()));
+
+    // Status match
+    const matchesStatus = statusFilter === "all" || d.status === statusFilter;
+
+    // Connectivity match
+    const matchesConnectivity = connectivityFilter === "all" || d.connectivity === connectivityFilter;
+
+    // Type match
+    const matchesType = (() => {
+      if (typeFilter === "all") return true;
+      const name = (d.name || "").toLowerCase();
+      if (typeFilter === "Axioma") return name.includes("axioma");
+      if (typeFilter === "Milesight") return name.includes("milesight");
+      if (typeFilter === "Tektelic") return name.includes("tektelic");
+      if (typeFilter === "Other") return !name.includes("axioma") && !name.includes("milesight") && !name.includes("tektelic");
+      return true;
+    })();
+
+    return matchesSearch && matchesStatus && matchesConnectivity && matchesType;
+  });
+
+  const sortedDevices = [...filteredDevices].sort((a, b) => {
+    if (sortBy === "name-asc") {
+      return (a.name || "").localeCompare(b.name || "");
+    }
+    if (sortBy === "name-desc") {
+      return (b.name || "").localeCompare(a.name || "");
+    }
+    if (sortBy === "last-seen-desc") {
+      const aTime = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+      const bTime = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+      return bTime - aTime;
+    }
+    if (sortBy === "last-seen-asc") {
+      const aTime = a.last_seen ? new Date(a.last_seen).getTime() : 0;
+      const bTime = b.last_seen ? new Date(b.last_seen).getTime() : 0;
+      return aTime - bTime;
+    }
+    if (sortBy === "battery-desc") {
+      const aBat = getBatteryForDevice(a).pct;
+      const bBat = getBatteryForDevice(b).pct;
+      return bBat - aBat;
+    }
+    return 0;
+  });
 
   const online = processedDevices.filter((d) => d.status === "online").length;
   const offline = processedDevices.filter((d) => d.status === "offline").length;
   const warning = processedDevices.filter((d) => d.status === "warning").length;
 
   if (error) return <div className="p-8 text-center text-rose-500">Error loading devices.</div>;
+
+  const isAnyFilterActive = statusFilter !== "all" || connectivityFilter !== "all" || typeFilter !== "all" || search !== "";
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-sans">
@@ -208,17 +260,177 @@ export default function DevicesPage({
           />
         </div>
         <div className="flex items-center gap-2 pr-2">
-          <button className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded transition-colors text-sm font-semibold">
+          <button 
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 rounded transition-colors text-sm font-semibold relative outline-none",
+              showFilters || statusFilter !== "all" || connectivityFilter !== "all" || typeFilter !== "all"
+                ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+            )}
+          >
             <span className="material-symbols-outlined text-[18px]">filter_list</span>
             Filters
+            {(statusFilter !== "all" || connectivityFilter !== "all" || typeFilter !== "all") && (
+              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-500 border border-white dark:border-slate-900 animate-pulse"></span>
+            )}
           </button>
+          
           <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-          <button className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded transition-colors text-sm font-semibold">
-            <span className="material-symbols-outlined text-[18px]">sort</span>
-            Sort
-          </button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded transition-colors text-sm font-semibold outline-none">
+              <span className="material-symbols-outlined text-[18px]">sort</span>
+              Sort: {
+                sortBy === "name-asc" ? "Name (A-Z)" :
+                sortBy === "name-desc" ? "Name (Z-A)" :
+                sortBy === "last-seen-desc" ? "Newest Active" :
+                sortBy === "last-seen-asc" ? "Oldest Active" :
+                sortBy === "battery-desc" ? "Battery Level" : "Default"
+              }
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setSortBy("name-asc")} className="font-medium cursor-pointer">
+                Name (A-Z)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name-desc")} className="font-medium cursor-pointer">
+                Name (Z-A)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSortBy("last-seen-desc")} className="font-medium cursor-pointer">
+                Newest Active
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("last-seen-asc")} className="font-medium cursor-pointer">
+                Oldest Active
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSortBy("battery-desc")} className="font-medium cursor-pointer">
+                Battery Level (High to Low)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* Collapsible Filter Panel */}
+      {showFilters && (
+        <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-5 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Status Filter */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Status</label>
+            <div className="flex flex-wrap gap-2">
+              {["all", "online", "offline", "warning"].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setStatusFilter(status)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all capitalize",
+                    statusFilter === status
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  )}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Connectivity Filter */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Connectivity</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: "All", value: "all" },
+                { label: "LoRaWAN", value: "lorawan" },
+                { label: "MQTT", value: "mqtt" },
+                { label: "HTTP Webhook", value: "http_webhook" },
+              ].map((conn) => (
+                <button
+                  key={conn.value}
+                  onClick={() => setConnectivityFilter(conn.value)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                    connectivityFilter === conn.value
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  )}
+                >
+                  {conn.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Device Type/Brand Filter */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Brand / Vendor</label>
+            <div className="flex flex-wrap gap-2">
+              {["all", "Axioma", "Milesight", "Tektelic", "Other"].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setTypeFilter(type)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+                    typeFilter === type
+                      ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                      : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                  )}
+                >
+                  {type === "all" ? "All" : type}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Active Filter Badges */}
+      {isAnyFilterActive && (
+        <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-900/20 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
+          <span className="font-semibold text-slate-500 dark:text-slate-400">Active Filters:</span>
+          
+          {search && (
+            <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10">
+              Search: "{search}"
+              <button onClick={() => setSearch("")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
+            </span>
+          )}
+
+          {statusFilter !== "all" && (
+            <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10 capitalize">
+              Status: {statusFilter}
+              <button onClick={() => setStatusFilter("all")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
+            </span>
+          )}
+
+          {connectivityFilter !== "all" && (
+            <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10 capitalize">
+              Connectivity: {connectivityFilter.replace('_', ' ')}
+              <button onClick={() => setConnectivityFilter("all")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
+            </span>
+          )}
+
+          {typeFilter !== "all" && (
+            <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10">
+              Brand: {typeFilter}
+              <button onClick={() => setTypeFilter("all")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
+            </span>
+          )}
+
+          <button 
+            onClick={() => {
+              setSearch("");
+              setStatusFilter("all");
+              setConnectivityFilter("all");
+              setTypeFilter("all");
+            }}
+            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold ml-auto hover:underline"
+          >
+            Clear All
+          </button>
+        </div>
+      )}
 
       {/* Data Table */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-b-xl overflow-hidden shadow-sm overflow-x-auto">
@@ -245,15 +457,15 @@ export default function DevicesPage({
               </tr>
             )}
             
-            {!isLoading && filteredDevices.length === 0 && (
+            {!isLoading && sortedDevices.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
-                  No devices found matching your search.
+                  No devices found matching your search and filter criteria.
                 </td>
               </tr>
             )}
 
-            {!isLoading && filteredDevices.map((device) => (
+            {!isLoading && sortedDevices.map((device) => (
               <tr key={device.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors group">
                 <td className="px-6 py-4 text-center">
                   <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -12,10 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { MOCK_MEMBERS } from "@/lib/mock-data";
 import type { WorkspaceMember } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Plus, MoreHorizontal, Shield, Eye, Wrench, Crown, Send } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,6 +30,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useWorkspaceMembers, useUpdateWorkspaceMemberRole, useRemoveWorkspaceMember } from "@/hooks/use-iot-data";
+import { useParams } from "next/navigation";
 
 const ROLE_CONFIG: Record<WorkspaceMember["role"], { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
   owner:  { label: "Owner",  icon: Crown,   className: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
@@ -50,6 +50,13 @@ const AVATAR_COLORS = [
 ];
 
 export default function MembersPage() {
+  const params = useParams();
+  const workspaceId = params.workspaceId as string;
+
+  const { data: members = [], isLoading } = useWorkspaceMembers(workspaceId);
+  const updateRoleMutation = useUpdateWorkspaceMemberRole();
+  const removeMemberMutation = useRemoveWorkspaceMember();
+
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -67,7 +74,7 @@ export default function MembersPage() {
       const response = await fetch("/api/workspace/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail }),
+        body: JSON.stringify({ email: inviteEmail, workspaceId }),
       });
       
       const data = await response.json();
@@ -85,6 +92,30 @@ export default function MembersPage() {
       setIsSending(false);
     }
   };
+
+  const handleRoleChange = async (memberId: string, role: string) => {
+    try {
+      await updateRoleMutation.mutateAsync({ memberId, role });
+      toast.success("Member role updated successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update member role");
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string, name: string) => {
+    if (!confirm(`Are you sure you want to remove ${name} from this workspace?`)) return;
+
+    try {
+      await removeMemberMutation.mutateAsync({ memberId, workspaceId });
+      toast.success(`${name} has been removed from the workspace`);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove member");
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-muted-foreground font-medium animate-pulse">Loading workspace members...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -148,7 +179,7 @@ export default function MembersPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {Object.entries(ROLE_CONFIG).map(([role, cfg]) => {
           const Icon = cfg.icon;
-          const count = MOCK_MEMBERS.filter(m => m.role === role).length;
+          const count = members.filter(m => m.role === role).length;
           return (
             <div key={role} className="rounded-xl border bg-card p-4 flex items-center gap-3">
               <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${cfg.className}`}>
@@ -176,20 +207,24 @@ export default function MembersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {MOCK_MEMBERS.map((member, idx) => {
-              const cfg = ROLE_CONFIG[member.role];
+            {members.map((member, idx) => {
+              const cfg = ROLE_CONFIG[member.role as WorkspaceMember["role"]] || ROLE_CONFIG.viewer;
               const RoleIcon = cfg.icon;
+              const profile = member.profiles as any;
+              const name = profile?.full_name || "Unknown User";
+              const email = profile?.email || "No email";
+              
               return (
                 <TableRow key={member.id} className="group">
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-semibold shrink-0 ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
-                        {getInitials(member.name)}
+                        {getInitials(name)}
                       </div>
-                      <span className="font-medium">{member.name}</span>
+                      <span className="font-medium">{name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{member.email}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{email}</TableCell>
                   <TableCell>
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${cfg.className}`}>
                       <RoleIcon className="h-3 w-3" />
@@ -198,7 +233,7 @@ export default function MembersPage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     <span suppressHydrationWarning>
-                      {new Date(member.joinedAt).toLocaleDateString()}
+                      {new Date(member.joined_at).toLocaleDateString()}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -208,9 +243,17 @@ export default function MembersPage() {
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Change Role</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, member.role === "admin" ? "member" : "admin")}>
+                            Promote to {member.role === "admin" ? "Member" : "Admin"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleRoleChange(member.id, member.role === "viewer" ? "member" : "viewer")}>
+                            {member.role === "viewer" ? "Make Member" : "Make Viewer"}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem 
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleRemoveMember(member.id, name)}
+                          >
                             Remove from workspace
                           </DropdownMenuItem>
                         </DropdownMenuContent>

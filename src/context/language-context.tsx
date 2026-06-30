@@ -30,7 +30,9 @@ const translations = {
       signOut: "Sign Out Account",
       workspaces: "Workspaces",
       active: "Active",
-      addWorkspace: "Add Workspace"
+      addWorkspace: "Add Workspace",
+      userManual: "User Manual",
+      capabilities: "Platform Capabilities"
     },
     header: {
       searchPlaceholder: "Search devices, alerts, rules... (Ctrl+K)",
@@ -126,7 +128,9 @@ const translations = {
       signOut: "Odjava s računa",
       workspaces: "Radni prostori",
       active: "Aktivno",
-      addWorkspace: "Dodaj radni prostor"
+      addWorkspace: "Dodaj radni prostor",
+      userManual: "Korisnički priručnik",
+      capabilities: "Mogućnosti platforme"
     },
     header: {
       searchPlaceholder: "Pretraži uređaje, upozorenja, pravila... (Ctrl+K)",

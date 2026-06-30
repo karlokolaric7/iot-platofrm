@@ -14,7 +14,7 @@ import {
 import { Bell, AlertTriangle, CheckCircle2, Search, Filter, Trash2, MoreHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useAlerts, useAcknowledgeAlert } from "@/hooks/use-iot-data";
+import { useAlerts, useAcknowledgeAlert, useClearAlerts } from "@/hooks/use-iot-data";
 import { useParams } from "next/navigation";
 
 const SEVERITY_CONFIG: Record<string, { label: string, className: string }> = {
@@ -30,6 +30,7 @@ export default function AlertsPage() {
   const [search, setSearch] = useState("");
   const { data: alerts = [], isLoading } = useAlerts(workspaceId);
   const acknowledgeMutation = useAcknowledgeAlert();
+  const clearMutation = useClearAlerts();
 
   const filteredAlerts = alerts.filter(a => 
     a.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -60,6 +61,22 @@ export default function AlertsPage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (alerts.length === 0) {
+      toast.info("No alerts to clear");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to clear all alerts for this workspace? This action cannot be undone.")) return;
+
+    try {
+      await clearMutation.mutateAsync(workspaceId);
+      toast.success("All alerts cleared");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to clear alerts");
+    }
+  };
+
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground animate-pulse text-lg font-medium">Loading alerts history...</div>;
   }
@@ -74,7 +91,13 @@ export default function AlertsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-2 text-destructive hover:text-destructive">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 text-destructive hover:text-destructive"
+            onClick={handleClearAll}
+            disabled={clearMutation.isPending}
+          >
             <Trash2 className="h-4 w-4" />
             Clear All
           </Button>

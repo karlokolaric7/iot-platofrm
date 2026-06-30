@@ -62,26 +62,54 @@ export function WidgetRenderer({ widget, isEditable, onRemove, onEdit }: WidgetR
     }
   };
 
+  const config = widget.config as any;
+  const color = config?.color || "#3b82f6";
+
+  const hexToRgb = (hex: string) => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '59, 130, 246';
+  };
+  const colorRgb = hexToRgb(color);
+
   return (
-    <Card className={cn(
-      "h-full flex flex-col transition-all duration-300 group overflow-hidden border border-white/60 dark:border-white/10",
-      "bg-white/70 dark:bg-slate-950/40 backdrop-blur-xl supports-[backdrop-filter]:bg-white/50 dark:supports-[backdrop-filter]:bg-slate-950/40",
-      "shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] inset-shadow-white dark:inset-shadow-none",
-      "hover:shadow-[0_12px_24px_-4px_rgba(0,0,0,0.08),0_4px_8px_-2px_rgba(0,0,0,0.04)]",
-      "hover:ring-1 hover:ring-primary/20",
-      isEditable && "hover:border-primary/30"
-    )}>
+    <Card 
+      style={{ 
+        "--widget-accent": color,
+        "--widget-accent-rgb": colorRgb,
+      } as React.CSSProperties}
+      className={cn(
+        "h-full flex flex-col transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group overflow-hidden border border-slate-200/50 dark:border-slate-850/60",
+        "bg-white/70 dark:bg-slate-950/35 backdrop-blur-md",
+        "shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-6px_rgba(0,0,0,0.25)]",
+        "hover:shadow-[0_15px_35px_-8px_rgba(var(--widget-accent-rgb),0.18),0_5px_15px_-5px_rgba(var(--widget-accent-rgb),0.08)]",
+        "hover:border-[rgba(var(--widget-accent-rgb),0.4)] hover:ring-1 hover:ring-[rgba(var(--widget-accent-rgb),0.15)]",
+        isEditable && "hover:scale-[1.01] hover:-translate-y-[1px]"
+      )}
+    >
       <CardHeader className={cn(
         headerPadding, 
-        "pb-0 flex flex-row items-center justify-between space-y-0 shrink-0 bg-gradient-to-b from-muted/20 to-transparent relative",
-        isEditable && "widget-drag-handle cursor-grab active:cursor-grabbing hover:bg-muted/30 transition-colors"
+        "pb-0 flex flex-row items-center justify-between space-y-0 shrink-0 bg-gradient-to-b from-muted/10 to-transparent relative",
+        isEditable && "widget-drag-handle cursor-grab active:cursor-grabbing hover:bg-muted/20 transition-colors"
       )}>
-        {isEditable && (
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 to-emerald-500 opacity-80 rounded-t-lg" />
-        )}
+        {/* Sleek top accent line */}
+        <div 
+          className={cn(
+            "absolute top-0 left-0 right-0 h-[3px] transition-all duration-300",
+            isEditable ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}
+          style={{ backgroundColor: "var(--widget-accent)" }}
+        />
+        
         <div className="flex items-center gap-2 overflow-hidden flex-1">
+          {/* Pulsing indicator dot */}
+          <span 
+            className="w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_var(--widget-accent)] animate-pulse"
+            style={{ backgroundColor: "var(--widget-accent)" }}
+          />
           {isEditable && (
-            <GripVertical className={cn("text-muted-foreground/50 shrink-0", isLarge ? "h-5 w-5" : "h-4 w-4")} />
+            <GripVertical className={cn("text-muted-foreground/40 shrink-0", isLarge ? "h-5 w-5" : "h-4 w-4")} />
           )}
           <CardTitle className={cn("font-bold uppercase tracking-wider text-muted-foreground/80 group-hover:text-foreground transition-colors truncate leading-none mt-0.5", titleSize)}>
             {widget.title}
@@ -90,7 +118,6 @@ export function WidgetRenderer({ widget, isEditable, onRemove, onEdit }: WidgetR
 
         <div className="flex items-center gap-0.5 shrink-0">
           <DropdownMenu>
-            {/* Increase z-index and use onPointerDown stopPropagation so the menu works even though the header is draggable */}
             <DropdownMenuTrigger 
               onPointerDown={(e) => isEditable && e.stopPropagation()}
               className={cn("relative z-10 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors opacity-0 group-hover:opacity-100", isLarge ? "h-8 w-8" : "h-7 w-7", isEditable && "opacity-100")}

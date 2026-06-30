@@ -105,6 +105,8 @@ export interface Database {
           app_eui: string | null
           last_seen: string | null
           settings: Json
+          latitude: number | null
+          longitude: number | null
           created_at: string
           updated_at: string
         }
@@ -121,6 +123,8 @@ export interface Database {
           tags?: string[]
           last_seen?: string | null
           settings?: Json
+          latitude?: number | null
+          longitude?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -137,6 +141,8 @@ export interface Database {
           tags?: string[]
           last_seen?: string | null
           settings?: Json
+          latitude?: number | null
+          longitude?: number | null
           created_at?: string
           updated_at?: string
         }

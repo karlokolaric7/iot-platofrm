@@ -47,9 +47,10 @@ export function DeviceMap({ devices, className }: DeviceMapProps) {
         defaultZoom={11}
         provider={(x, y, z, dpr) => {
           const s = String.fromCharCode(97 + ((x + y + z) % 3));
+          const retinaSuffix = dpr && dpr >= 2 ? "@2x" : "";
           return isDark
-            ? `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}${dpr >= 2 ? "@2x" : ""}.png`
-            : `https://${s}.basemaps.cartocdn.com/light_all/${z}/${x}/${y}${dpr >= 2 ? "@2x" : ""}.png`;
+            ? `https://${s}.basemaps.cartocdn.com/dark_all/${z}/${x}/${y}${retinaSuffix}.png`
+            : `https://${s}.basemaps.cartocdn.com/light_all/${z}/${x}/${y}${retinaSuffix}.png`;
         }}
       >
         <ZoomControl style={{ top: 80, left: 10 }} />

@@ -55,7 +55,7 @@ export default function SingleDashboardPage({
     try {
       await saveLayout.mutateAsync({
         id: dashboardId,
-        layout: widgets as any,
+        widgets: widgets as any,
       });
       setEditMode(false);
       toast.success("Dashboard layout saved");
@@ -65,14 +65,27 @@ export default function SingleDashboardPage({
   }
 
   function handleAddWidget(partialWidget: Partial<DashboardWidget>) {
+    const newId = typeof window !== 'undefined' && window.crypto?.randomUUID 
+      ? window.crypto.randomUUID() 
+      : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+          const r = (Math.random() * 16) | 0;
+          const v = c === 'x' ? r : (r & 0x3) | 0x8;
+          return v.toString(16);
+        });
+
     const newWidget: DashboardWidget = {
       ...partialWidget,
-      id: `w-${Math.random().toString(36).substr(2, 9)}`,
-      dashboardId,
+      id: newId,
+      dashboard_id: dashboardId,
     } as DashboardWidget;
 
     setWidgets((prev) => [...prev, newWidget]);
     toast.success("Widget added to dashboard");
+  }
+
+  function handleWidgetDelete(widgetId: string) {
+    setWidgets((prev) => prev.filter((w) => w.id !== widgetId));
+    toast.success("Widget removed from dashboard");
   }
 
   return (
@@ -171,6 +184,7 @@ export default function SingleDashboardPage({
           widgets={widgets}
           isEditable={editMode}
           onLayoutChange={(newWidgets) => setWidgets(newWidgets)}
+          onWidgetDelete={handleWidgetDelete}
         />
       </div>
     </div>

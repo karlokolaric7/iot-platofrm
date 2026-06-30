@@ -64,7 +64,7 @@ export function useChirpstackGateways() {
       if (!res.ok) throw new Error("Failed to fetch ChirpStack status");
       return res.json();
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 }
 
@@ -76,7 +76,7 @@ export function useChirpstackDevices() {
       if (!res.ok) throw new Error("Failed to fetch ChirpStack devices status");
       return res.json();
     },
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 }
 
@@ -90,7 +90,7 @@ export function useChirpstackDevice(devEui: string) {
       return res.json();
     },
     enabled: !!devEui,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 }
 
@@ -201,6 +201,92 @@ export function useUpdateWorkspace() {
   });
 }
 
+export function useDeleteWorkspace() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('workspaces')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+    },
+  });
+}
+
+export function useWorkspaceMembers(workspaceId: string) {
+  return useQuery({
+    queryKey: ['workspace_members', workspaceId],
+    queryFn: async () => {
+      const actualWorkspaceId = await getWorkspaceId(workspaceId);
+      const { data, error } = await supabase
+        .from('workspace_members')
+        .select(`
+          id,
+          role,
+          joined_at,
+          user_id,
+          profiles (
+            id,
+            email,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('workspace_id', actualWorkspaceId);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useUpdateWorkspaceMemberRole() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ memberId, role }: { memberId: string; role: string }) => {
+      const { data, error } = await supabase
+        .from('workspace_members')
+        .update({ role })
+        .eq('id', memberId)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['workspace_members', data.workspace_id] });
+    },
+  });
+}
+
+export function useRemoveWorkspaceMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ memberId, workspaceId }: { memberId: string; workspaceId: string }) => {
+      const { error } = await supabase
+        .from('workspace_members')
+        .delete()
+        .eq('id', memberId);
+      
+      if (error) throw error;
+      return { memberId, workspaceId };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['workspace_members', data.workspaceId] });
+    },
+  });
+}
+
 // --- Device Hooks ---
 
 export function useDevices(workspaceId: string) {
@@ -277,7 +363,6 @@ export function useLatestMeasurements(deviceId: string) {
       return data;
     },
     enabled: !!deviceId,
-    refetchInterval: 5000, 
   });
 }
 
@@ -306,7 +391,7 @@ export function useWorkspaceMeasurements(workspaceId: string) {
       return data;
     },
     enabled: !!workspaceId,
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 }
 
@@ -338,7 +423,7 @@ export function useHistoricalData(deviceId: string, fieldId: string, range: stri
       return data;
     },
     enabled: !!deviceId && !!fieldId,
-    refetchInterval: 5000,
+    refetchInterval: 60000,
   });
 }
 
@@ -360,7 +445,6 @@ export function useLatestDeviceLogs(deviceId: string) {
       return data;
     },
     enabled: !!deviceId,
-    refetchInterval: 5000, 
   });
 }
 
@@ -843,10 +927,11 @@ export function useRules(workspaceId: string) {
   return useQuery({
     queryKey: ['rules', workspaceId],
     queryFn: async () => {
+      const actualWorkspaceId = await getWorkspaceId(workspaceId);
       const { data, error } = await supabase
         .from('rules')
         .select('*')
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', actualWorkspaceId)
         .order('name');
       
       if (error) throw error;
@@ -942,10 +1027,11 @@ export function useAlerts(workspaceId: string) {
   return useQuery({
     queryKey: ['alerts', workspaceId],
     queryFn: async () => {
+      const actualWorkspaceId = await getWorkspaceId(workspaceId);
       const { data, error } = await supabase
         .from('alerts')
         .select('*, devices(name)')
-        .eq('workspace_id', workspaceId)
+        .eq('workspace_id', actualWorkspaceId)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -971,6 +1057,26 @@ export function useAcknowledgeAlert() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['alerts', data.workspace_id] });
+    },
+  });
+}
+
+export function useClearAlerts() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (workspaceId: string) => {
+      const actualWorkspaceId = await getWorkspaceId(workspaceId);
+      const { error } = await supabase
+        .from('alerts')
+        .delete()
+        .eq('workspace_id', actualWorkspaceId);
+      
+      if (error) throw error;
+      return workspaceId;
+    },
+    onSuccess: (workspaceId) => {
+      queryClient.invalidateQueries({ queryKey: ['alerts', workspaceId] });
     },
   });
 }
@@ -1098,16 +1204,53 @@ export function useSaveDashboardLayout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, layout }: { id: string; layout: Json }) => {
-      const { data, error } = await supabase
-        .from('dashboards')
-        .update({ layout })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+    mutationFn: async ({ id, widgets }: { id: string; widgets: any[] }) => {
+      // 1. Fetch current widgets from the database to identify deleted ones
+      const { data: existingWidgets, error: fetchError } = await supabase
+        .from('widgets')
+        .select('id')
+        .eq('dashboard_id', id);
+
+      if (fetchError) throw fetchError;
+
+      const existingIds = (existingWidgets || []).map((w) => w.id);
+      const newIds = widgets.map((w) => w.id);
+
+      // Identify deleted widget IDs
+      const deletedIds = existingIds.filter((id) => !newIds.includes(id));
+
+      // 2. Delete removed widgets from the database
+      if (deletedIds.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('widgets')
+          .delete()
+          .in('id', deletedIds);
+        if (deleteError) throw deleteError;
+      }
+
+      // 3. Upsert the current widgets list (updates positions and configurations)
+      if (widgets.length > 0) {
+        const widgetsToUpsert = widgets.map((w) => ({
+          id: w.id,
+          dashboard_id: id,
+          type: w.type,
+          title: w.title,
+          config: w.config || {},
+          device_id: w.device_id || null,
+          field_id: w.field_id || null,
+          x: w.x,
+          y: w.y,
+          w: w.w,
+          h: w.h,
+        }));
+
+        const { error: upsertError } = await supabase
+          .from('widgets')
+          .upsert(widgetsToUpsert);
+        if (upsertError) throw upsertError;
+      }
+
+      return { id };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['dashboard', data.id] });
@@ -1192,6 +1335,84 @@ export function useWorkspaceStats(workspaceId: string) {
       };
     },
     enabled: !!workspaceId,
-    refetchInterval: 5000,
+    refetchInterval: 60000,
+  });
+}
+
+// --- Downlink Hooks ---
+
+export function useDeviceDownlinks(deviceId: string) {
+  return useQuery({
+    queryKey: ['device-downlinks', deviceId],
+    queryFn: async () => {
+      if (!deviceId) return [];
+      const { data, error } = await supabase
+        .from('device_downlinks')
+        .select('*')
+        .eq('device_id', deviceId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!deviceId,
+    refetchInterval: 30000,
+  });
+}
+
+export function useScheduleDownlink() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (downlink: {
+      device_id: string;
+      f_port: number;
+      payload_raw: string;
+      payload_type: 'hex' | 'base64' | 'text';
+      confirmed: boolean;
+    }) => {
+      const { data, error } = await supabase
+        .from('device_downlinks')
+        .insert(downlink)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['device-downlinks', data.device_id] });
+    },
+  });
+}
+
+export function useUpdateDownlinkStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      deviceId,
+      status,
+      sent_at,
+    }: {
+      id: string;
+      deviceId: string;
+      status: 'pending' | 'sent' | 'cancelled';
+      sent_at?: string | null;
+    }) => {
+      const { data, error } = await supabase
+        .from('device_downlinks')
+        .update({ status, sent_at: sent_at || undefined })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['device-downlinks', data.device_id] });
+    },
   });
 }

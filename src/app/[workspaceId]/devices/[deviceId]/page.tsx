@@ -10,6 +10,7 @@ import { DeviceDebugLogs } from "@/components/devices/device-debug-logs";
 import { DeviceFieldsTab } from "@/components/devices/device-fields-tab";
 import { PayloadDecoderTab } from "@/components/devices/payload-decoder-tab";
 import { DeviceHistoryTab } from "@/components/devices/device-history-tab";
+import { DeviceDownlinksTab } from "@/components/devices/device-downlinks-tab";
 import { DashboardGrid } from "@/components/dashboard/dashboard-grid";
 import { WidgetSidebar } from "@/components/dashboard/widget-sidebar";
 import { useDeviceDashboard, useUpdateWidgetLayouts, useDeleteWidget, useAddWidget, useUpdateWidget } from "@/hooks/use-iot-data";
@@ -296,18 +297,8 @@ export default function DeviceDetailPage({
           />
         </TabsContent>
 
-        <TabsContent value="downlinks" className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-12 flex flex-col items-center justify-center text-center shadow-sm">
-             <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
-                <span className="material-symbols-outlined text-[32px]">arrow_downward</span>
-             </div>
-             <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Downlink Queue</h3>
-             <p className="text-sm font-medium text-slate-500 mt-2 max-w-md mx-auto">Queue configuration payloads to be sent to your device on the next uplink window.</p>
-             <button className="mt-6 flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 px-4 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm">
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                Schedule Downlink
-             </button>
-          </div>
+        <TabsContent value="downlinks" className="space-y-6 outline-none">
+          <DeviceDownlinksTab deviceId={deviceId} />
         </TabsContent>
 
         <TabsContent value="configuration" className="space-y-6 outline-none">

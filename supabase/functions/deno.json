@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window", "deno.ns"]
+  },
+  "tasks": {
+    "check": "deno check tektelic-ingest/index.ts lorawan-ingest/index.ts"
+  }
+}
