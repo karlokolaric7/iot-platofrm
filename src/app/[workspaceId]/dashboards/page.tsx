@@ -243,10 +243,8 @@ export default function DashboardsPage({
   const unit = activeFieldObj?.unit || "";
 
   if (selectedFieldId === "all") {
-    // Message Ingestion Rate for the selected device
-    const deviceMeasurements = measurements.filter((m: any) => m.device_id === selectedDeviceId);
-    
-    deviceMeasurements.forEach((m: any) => {
+    // Message Ingestion Rate for the selected device using historical data
+    historicalData.forEach((m: any) => {
       const mTime = new Date(m.time).getTime();
       const diffMs = now - mTime;
       const bucketIndex = numBuckets - 1 - Math.floor(diffMs / bucketDurationMs);

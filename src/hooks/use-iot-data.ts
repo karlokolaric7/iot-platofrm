@@ -402,7 +402,7 @@ export function useHistoricalData(deviceId: string, fieldId: string, range: stri
       if (!deviceId || !fieldId) return [];
 
       let fromDate = new Date();
-      switch (range) {
+      switch (range.toLowerCase()) {
         case '1h': fromDate.setHours(fromDate.getHours() - 1); break;
         case '6h': fromDate.setHours(fromDate.getHours() - 6); break;
         case '24h': fromDate.setHours(fromDate.getHours() - 24); break;
@@ -411,13 +411,17 @@ export function useHistoricalData(deviceId: string, fieldId: string, range: stri
         default: fromDate.setHours(fromDate.getHours() - 24);
       }
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('measurements')
         .select('time, value')
         .eq('device_id', deviceId)
-        .eq('field_id', fieldId)
-        .gte('time', fromDate.toISOString())
-        .order('time', { ascending: true });
+        .gte('time', fromDate.toISOString());
+
+      if (fieldId !== 'all') {
+        query = query.eq('field_id', fieldId);
+      }
+
+      const { data, error } = await query.order('time', { ascending: true });
       
       if (error) throw error;
       return data;
