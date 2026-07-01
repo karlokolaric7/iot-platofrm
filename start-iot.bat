@@ -34,7 +34,7 @@ echo.
 
 echo [5/5] Starting Public Sharing Tunnel (localtunnel)
 :: Expose port 3001 using localtunnel
-start "Public Sharing Tunnel" cmd /k "npx -y localtunnel --port 3001"
+start "Public Sharing Tunnel" cmd /k "npx -y localtunnel --port 3001 --local-host 127.0.0.1"
 echo Public sharing tunnel started.
 echo.
 
