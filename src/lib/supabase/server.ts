@@ -24,6 +24,16 @@ export async function createClient() {
           }
         },
       },
+      global: {
+        fetch: (url, options) => {
+          const headers = new Headers(options?.headers)
+          headers.set('ngrok-skip-browser-warning', 'true')
+          return fetch(url, {
+            ...options,
+            headers,
+          })
+        }
+      }
     }
   )
 }
