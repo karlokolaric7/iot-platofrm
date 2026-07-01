@@ -32,9 +32,9 @@ start "ngrok Tunnel" cmd /k "ngrok http 54321 --domain=crunchy-result-crier.ngro
 echo ngrok started.
 echo.
 
-echo [5/5] Starting Public Sharing Tunnel (localhost.run)
-:: Expose port 3001 using localhost.run over SSH
-start "Public Sharing Tunnel" cmd /k "ssh -o StrictHostKeyChecking=no -R 80:127.0.0.1:3001 nokey@localhost.run"
+echo [5/5] Starting Public Sharing Tunnel (localtunnel)
+:: Expose port 3001 using localtunnel
+start "Public Sharing Tunnel" cmd /k "npx -y localtunnel --port 3001"
 echo Public sharing tunnel started.
 echo.
 
