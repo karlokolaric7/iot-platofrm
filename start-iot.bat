@@ -26,10 +26,16 @@ echo [3/4] Starting Next.js Frontend
 :: Alternatively, use `start /B npm run dev` to run it completely hidden in the background.
 start "IoT Dashboard Frontend" cmd /k "npm run dev"
 
-echo [4/4] Starting ngrok Tunnel
+echo [4/5] Starting ngrok Tunnel
 :: Start ngrok with the configured static domain
 start "ngrok Tunnel" cmd /k "ngrok http 54321 --domain=crunchy-result-crier.ngrok-free.dev"
 echo ngrok started.
+echo.
+
+echo [5/5] Starting Public Sharing Tunnel (localhost.run)
+:: Expose port 3001 using localhost.run over SSH
+start "Public Sharing Tunnel" cmd /k "ssh -o StrictHostKeyChecking=no -R 80:127.0.0.1:3001 nokey@localhost.run"
+echo Public sharing tunnel started.
 echo.
 
 echo ===================================
