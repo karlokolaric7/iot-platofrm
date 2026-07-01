@@ -191,6 +191,7 @@ export function DeviceHistoryTab({ deviceId, fields }: DeviceHistoryTabProps) {
                     stroke="hsl(var(--muted-foreground))"
                   />
                   <Tooltip 
+                    isAnimationActive={false}
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))', 
                       borderColor: 'hsl(var(--border))',
@@ -202,13 +203,13 @@ export function DeviceHistoryTab({ deviceId, fields }: DeviceHistoryTabProps) {
                     labelFormatter={(label, payload) => payload[0]?.payload?.fullTime || label}
                   />
                   <Area
+                    isAnimationActive={false}
                     type="monotone"
                     dataKey="value"
                     stroke={selectedField?.color || "var(--primary)"}
                     strokeWidth={2.5}
                     fillOpacity={1}
                     fill="url(#colorValue)"
-                    animationDuration={1500}
                   />
                 </AreaChart>
               </ResponsiveContainer>

@@ -252,6 +252,7 @@ export default function DataExplorerPage() {
                         tickFormatter={(v) => `${v}`}
                       />
                       <Tooltip 
+                        isAnimationActive={false}
                         contentStyle={{ 
                           backgroundColor: '#fff', 
                           borderRadius: '8px', 
@@ -260,6 +261,7 @@ export default function DataExplorerPage() {
                         }}
                       />
                       <Line
+                        isAnimationActive={false}
                         type="monotone"
                         dataKey="value"
                         stroke="#3b82f6"
@@ -290,8 +292,9 @@ export default function DataExplorerPage() {
                         axisLine={false} 
                         tick={{ fill: '#64748b' }}
                       />
-                      <Tooltip />
+                      <Tooltip isAnimationActive={false} />
                       <Area
+                        isAnimationActive={false}
                         type="monotone"
                         dataKey="value"
                         stroke="#3b82f6"
