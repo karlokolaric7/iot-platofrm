@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Key, Plus, Copy, Trash2, Eye, EyeOff, ShieldCheck, Terminal } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/language-context";
 
 interface ApiToken {
   id: string;
@@ -43,6 +44,7 @@ const MOCK_TOKENS: ApiToken[] = [
 export default function ApiSettingsPage() {
   const [tokens, setTokens] = useState<ApiToken[]>(MOCK_TOKENS);
   const [showTokens, setShowTokens] = useState<Record<string, boolean>>({});
+  const { t, language } = useLanguage();
 
   const toggleTokenVisibility = (id: string) => {
     setShowTokens((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -50,13 +52,13 @@ export default function ApiSettingsPage() {
 
   const handleCopy = (token: string) => {
     navigator.clipboard.writeText(token);
-    toast.success("Token copied to clipboard");
+    toast.success(t("api.tokenCopied"));
   };
 
   const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to revoke this API token? Any applications using it will lose access.")) {
+    if (confirm(t("api.confirmRevoke"))) {
       setTokens((prev) => prev.filter((t) => t.id !== id));
-      toast.success("API token revoked");
+      toast.success(t("api.tokenRevoked"));
     }
   };
 
@@ -64,14 +66,14 @@ export default function ApiSettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">API Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("api.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your API tokens and service account credentials.
+            {t("api.desc")}
           </p>
         </div>
         <Button className="gap-2">
           <Plus className="h-4 w-4" />
-          Create New Token
+          {t("api.createNewToken")}
         </Button>
       </div>
 
@@ -81,20 +83,20 @@ export default function ApiSettingsPage() {
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Key className="h-4 w-4" />
-              Access Tokens
+              {t("api.accessTokensTitle")}
             </CardTitle>
             <CardDescription>
-              Use these tokens to authenticate your devices and integrations with our REST API.
+              {t("api.accessTokensDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Token Name</TableHead>
-                  <TableHead>Key</TableHead>
-                  <TableHead>Last Used</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead>{t("api.tokenNameHead")}</TableHead>
+                  <TableHead>{t("api.keyHead")}</TableHead>
+                  <TableHead>{t("api.lastUsedHead")}</TableHead>
+                  <TableHead>{t("api.createdHead")}</TableHead>
                   <TableHead className="w-[100px]" />
                 </TableRow>
               </TableHeader>
@@ -126,10 +128,10 @@ export default function ApiSettingsPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {token.lastUsed ? new Date(token.lastUsed).toLocaleDateString() : "Never"}
+                      {token.lastUsed ? new Date(token.lastUsed).toLocaleDateString(language === "hr" ? "hr-HR" : "en-US") : t("gateways.never")}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(token.createdAt).toLocaleDateString()}
+                      {new Date(token.createdAt).toLocaleDateString(language === "hr" ? "hr-HR" : "en-US")}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -154,25 +156,32 @@ export default function ApiSettingsPage() {
             <CardHeader>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                API Best Practices
+                {t("api.bestPracticesTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-3">
               <p className="text-muted-foreground">
-                Follow these guidelines to keep your workspace secure:
+                {t("api.bestPracticesDesc")}
               </p>
               <ul className="list-disc list-inside space-y-1 text-xs text-muted-foreground">
-                <li>Never share your tokens in public repositories.</li>
-                <li>Rotate your production tokens every 90 days.</li>
-                <li>Use separate tokens for each integration (e.g., Gateway 1, Mobile App).</li>
-                <li>Revoke tokens immediately if you suspect a leak.</li>
+                <li>{t("api.practice1")}</li>
+                <li>{t("api.practice2")}</li>
+                <li>{t("api.practice3")}</li>
+                <li>{t("api.practice4")}</li>
               </ul>
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Terminal className="h-4 w-4 text-primary" />
+                {language === "hr" ? "Primjer integracije" : "Integration Example"}
+              </CardTitle>
+            </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <p className="text-xs text-muted-foreground">Example cURL request to ingest data:</p>
+                <p className="text-xs text-muted-foreground">{t("api.exampleCurl")}</p>
                 <div className="relative">
                   <pre className="block bg-slate-950 p-3 rounded-lg text-[10px] text-slate-300 font-mono overflow-x-auto border border-slate-800 leading-relaxed">
 {`curl -X POST https://api.iot-platform.io/v1/ingest \\
@@ -186,7 +195,7 @@ export default function ApiSettingsPage() {
                     className="absolute top-2 right-2 h-6 w-6 text-slate-400 hover:text-white hover:bg-white/10"
                     onClick={() => {
                       navigator.clipboard.writeText(`curl -X POST https://api.iot-platform.io/v1/ingest \\\n  -H "Authorization: Bearer YOUR_TOKEN" \\\n  -H "Content-Type: application/json" \\\n  -d '{"device_id": "d-123", "data": {"temp": 22}}'`);
-                      toast.success("Command copied");
+                      toast.success(t("api.commandCopied"));
                     }}
                   >
                     <Copy className="h-3 w-3" />
@@ -194,6 +203,7 @@ export default function ApiSettingsPage() {
                 </div>
               </div>
             </CardContent>
+          </Card>
         </div>
       </div>
     </div>

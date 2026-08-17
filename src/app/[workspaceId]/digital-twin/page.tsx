@@ -891,8 +891,8 @@ export default function DigitalTwinPage() {
               <ul className="list-disc pl-4 mt-1.5 space-y-1.5 font-medium">
                 <li>
                   {language === "hr" 
-                    ? "Registrirajte uređaj pomoću gumba 'Provision Device' u Fleet Management izborniku koristeći njegov EUI." 
-                    : "Register your sensor using the 'Provision Device' dialog in Fleet Management with its active DevEUI."}
+                    ? "Registrirajte uređaj pomoću gumba 'Provision Device' u izborniku 'Upravljanje uređajima' koristeći njegov EUI." 
+                    : "Register your sensor using the 'Provision Device' dialog in 'Device Management' with its active DevEUI."}
                 </li>
                 <li>
                   {language === "hr" 

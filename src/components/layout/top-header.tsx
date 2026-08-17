@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const AVATAR_PRESETS = [
   "https://api.dicebear.com/7.x/bottts/svg?seed=IoT1",
@@ -57,11 +58,32 @@ export function TopHeader() {
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Fetch lists for Command Palette search
   const { data: devices = [] } = useDevices(workspaceId);
   const { data: gateways = [] } = useGateways(workspaceId);
   const { data: rules = [] } = useRules(workspaceId);
+
+  // Live filter Command Palette list
+  const filteredDevices = searchQuery
+    ? devices.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : devices.slice(0, 3);
+  const filteredGateways = searchQuery
+    ? gateways.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : gateways.slice(0, 2);
+  const filteredRules = searchQuery
+    ? rules.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : rules.slice(0, 2);
+
+  // Flat results for keyboard navigation
+  const flatResults = React.useMemo(() => {
+    return [
+      ...filteredDevices.map(d => ({ type: "device", id: d.id, url: `/${workspaceId}/devices/${d.id}` })),
+      ...filteredGateways.map(g => ({ type: "gateway", id: g.id, url: `/${workspaceId}/gateways` })),
+      ...filteredRules.map(r => ({ type: "rule", id: r.id, url: `/${workspaceId}/rules` })),
+    ];
+  }, [filteredDevices, filteredGateways, filteredRules, workspaceId]);
 
   // Profile Form States
   const [fullName, setFullName] = useState("");
@@ -125,7 +147,7 @@ export function TopHeader() {
     };
   }, []);
 
-  // Keybind for Ctrl+K search palette
+  // Keybind for Ctrl+K search palette and keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -133,14 +155,34 @@ export function TopHeader() {
         const searchInput = document.getElementById("header-search-input");
         searchInput?.focus();
         setSearchFocused(true);
-      }
-      if (e.key === "Escape") {
+      } else if (e.key === "Escape") {
         setSearchFocused(false);
+      } else if (searchFocused && flatResults.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setSelectedIndex(prev => (prev + 1) % flatResults.length);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setSelectedIndex(prev => (prev - 1 + flatResults.length) % flatResults.length);
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          const targetItem = flatResults[selectedIndex];
+          if (targetItem) {
+            router.push(targetItem.url);
+            setSearchFocused(false);
+            setSearchQuery("");
+          }
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [searchFocused, flatResults, selectedIndex, router]);
+
+  // Reset selection index when search query or focus state changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery, searchFocused]);
 
   // Handle outside click to close Search Dropdown
   useEffect(() => {
@@ -195,16 +237,7 @@ export function TopHeader() {
     toast.success(language === "hr" ? "Sve obavijesti su označene kao pročitane" : "All notifications marked as read");
   };
 
-  // Live filter Command Palette list
-  const filteredDevices = searchQuery
-    ? devices.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : devices.slice(0, 3);
-  const filteredGateways = searchQuery
-    ? gateways.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : gateways.slice(0, 2);
-  const filteredRules = searchQuery
-    ? rules.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : rules.slice(0, 2);
+
 
   return (
     <>
@@ -245,23 +278,32 @@ export function TopHeader() {
                     {filteredDevices.length === 0 ? (
                       <p className="px-2 py-1.5 text-xs text-slate-400 italic">{language === "hr" ? "Nema podudarnih uređaja" : "No devices match"}</p>
                     ) : (
-                      filteredDevices.map(d => (
-                        <div 
-                          key={d.id}
-                          className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                          onClick={() => {
-                            router.push(`/${workspaceId}/devices/${d.id}`);
-                            setSearchFocused(false);
-                            setSearchQuery("");
-                          }}
-                        >
-                          <span className="material-symbols-outlined text-[16px] text-slate-400">router</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{d.name}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{d.description || (language === "hr" ? "LoRaWAN Uređaj" : "LoRaWAN Device")}</p>
+                      filteredDevices.map((d, index) => {
+                        const globalIndex = index;
+                        const isSelected = selectedIndex === globalIndex;
+                        return (
+                          <div 
+                            key={d.id}
+                            className={cn(
+                              "flex items-center gap-3 px-2 py-1.5 rounded-lg cursor-pointer transition-colors border",
+                              isSelected 
+                                ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800" 
+                                : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border-transparent"
+                            )}
+                            onClick={() => {
+                              router.push(`/${workspaceId}/devices/${d.id}`);
+                              setSearchFocused(false);
+                              setSearchQuery("");
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-slate-400">router</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{d.name}</p>
+                              <p className="text-[10px] text-slate-400 truncate">{d.description || (language === "hr" ? "LoRaWAN Uređaj" : "LoRaWAN Device")}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
 
@@ -271,23 +313,32 @@ export function TopHeader() {
                     {filteredGateways.length === 0 ? (
                       <p className="px-2 py-1.5 text-xs text-slate-400 italic">{language === "hr" ? "Nema podudarnih pristupnika" : "No gateways match"}</p>
                     ) : (
-                      filteredGateways.map(g => (
-                        <div 
-                          key={g.id}
-                          className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                          onClick={() => {
-                            router.push(`/${workspaceId}/gateways`);
-                            setSearchFocused(false);
-                            setSearchQuery("");
-                          }}
-                        >
-                          <span className="material-symbols-outlined text-[16px] text-slate-400">hub</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{g.name}</p>
-                            <p className="text-[10px] text-slate-400 truncate">EUI: {g.eui || "N/A"}</p>
+                      filteredGateways.map((g, index) => {
+                        const globalIndex = filteredDevices.length + index;
+                        const isSelected = selectedIndex === globalIndex;
+                        return (
+                          <div 
+                            key={g.id}
+                            className={cn(
+                              "flex items-center gap-3 px-2 py-1.5 rounded-lg cursor-pointer transition-colors border",
+                              isSelected 
+                                ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800" 
+                                : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border-transparent"
+                            )}
+                            onClick={() => {
+                              router.push(`/${workspaceId}/gateways`);
+                              setSearchFocused(false);
+                              setSearchQuery("");
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-slate-400">hub</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{g.name}</p>
+                              <p className="text-[10px] text-slate-400 truncate">EUI: {g.eui || "N/A"}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
 
@@ -297,23 +348,32 @@ export function TopHeader() {
                     {filteredRules.length === 0 ? (
                       <p className="px-2 py-1.5 text-xs text-slate-400 italic">{language === "hr" ? "Nema podudarnih pravila" : "No rules match"}</p>
                     ) : (
-                      filteredRules.map(r => (
-                        <div 
-                          key={r.id}
-                          className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                          onClick={() => {
-                            router.push(`/${workspaceId}/rules`);
-                            setSearchFocused(false);
-                            setSearchQuery("");
-                          }}
-                        >
-                          <span className="material-symbols-outlined text-[16px] text-slate-400">bolt</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{r.name}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{r.description || (language === "hr" ? "Aktivno pravilo" : "Active Rule")}</p>
+                      filteredRules.map((r, index) => {
+                        const globalIndex = filteredDevices.length + filteredGateways.length + index;
+                        const isSelected = selectedIndex === globalIndex;
+                        return (
+                          <div 
+                            key={r.id}
+                            className={cn(
+                              "flex items-center gap-3 px-2 py-1.5 rounded-lg cursor-pointer transition-colors border",
+                              isSelected 
+                                ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800" 
+                                : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border-transparent"
+                            )}
+                            onClick={() => {
+                              router.push(`/${workspaceId}/rules`);
+                              setSearchFocused(false);
+                              setSearchQuery("");
+                            }}
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-slate-400">bolt</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{r.name}</p>
+                              <p className="text-[10px] text-slate-400 truncate">{r.description || (language === "hr" ? "Aktivno pravilo" : "Active Rule")}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

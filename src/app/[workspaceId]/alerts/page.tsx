@@ -16,16 +16,18 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAlerts, useAcknowledgeAlert, useClearAlerts } from "@/hooks/use-iot-data";
 import { useParams } from "next/navigation";
+import { useLanguage } from "@/context/language-context";
 
-const SEVERITY_CONFIG: Record<string, { label: string, className: string }> = {
-  critical: { label: "Critical", className: "bg-red-500/10 text-red-500 border-red-200" },
-  warning: { label: "Warning", className: "bg-amber-500/10 text-amber-500 border-amber-200" },
-  info: { label: "Info", className: "bg-blue-500/10 text-blue-500 border-blue-200" },
+const SEVERITY_CONFIG: Record<string, { labelKey: string, className: string }> = {
+  critical: { labelKey: "alerts.critical", className: "bg-red-500/10 text-red-500 border-red-200" },
+  warning: { labelKey: "alerts.warning", className: "bg-amber-500/10 text-amber-500 border-amber-200" },
+  info: { labelKey: "alerts.info", className: "bg-blue-500/10 text-blue-500 border-blue-200" },
 };
 
 export default function AlertsPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
+  const { t, language } = useLanguage();
   
   const [search, setSearch] = useState("");
   const { data: alerts = [], isLoading } = useAlerts(workspaceId);
@@ -40,54 +42,54 @@ export default function AlertsPage() {
   const handleAcknowledge = async (id: string) => {
     try {
       await acknowledgeMutation.mutateAsync(id);
-      toast.success("Alert acknowledged");
+      toast.success(t("alerts.alertAcknowledged"));
     } catch (error: any) {
-      toast.error(error.message || "Failed to acknowledge alert");
+      toast.error(error.message || t("alerts.failedAcknowledge"));
     }
   };
 
   const handleAcknowledgeAll = async () => {
     const unacknowledged = alerts.filter(a => !a.is_resolved);
     if (unacknowledged.length === 0) {
-      toast.info("No unacknowledged alerts");
+      toast.info(t("alerts.noUnacknowledged"));
       return;
     }
 
     try {
       await Promise.all(unacknowledged.map(a => acknowledgeMutation.mutateAsync(a.id)));
-      toast.success("All alerts acknowledged");
+      toast.success(t("alerts.allAcknowledged"));
     } catch (error: any) {
-      toast.error("Failed to acknowledge all alerts");
+      toast.error(t("alerts.failedAcknowledgeAll"));
     }
   };
 
   const handleClearAll = async () => {
     if (alerts.length === 0) {
-      toast.info("No alerts to clear");
+      toast.info(t("alerts.noAlertsToClear"));
       return;
     }
 
-    if (!confirm("Are you sure you want to clear all alerts for this workspace? This action cannot be undone.")) return;
+    if (!confirm(t("alerts.confirmClearAll"))) return;
 
     try {
       await clearMutation.mutateAsync(workspaceId);
-      toast.success("All alerts cleared");
+      toast.success(t("alerts.allCleared"));
     } catch (error: any) {
-      toast.error(error.message || "Failed to clear alerts");
+      toast.error(error.message || t("alerts.failedClearAll"));
     }
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground animate-pulse text-lg font-medium">Loading alerts history...</div>;
+    return <div className="p-8 text-center text-muted-foreground animate-pulse text-lg font-medium">{t("alerts.loading")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Alerts History</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("alerts.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Monitor and acknowledge recent system alerts and notifications.
+            {t("alerts.desc")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -99,11 +101,11 @@ export default function AlertsPage() {
             disabled={clearMutation.isPending}
           >
             <Trash2 className="h-4 w-4" />
-            Clear All
+            {t("alerts.clearAll")}
           </Button>
           <Button size="sm" className="gap-2" onClick={handleAcknowledgeAll} disabled={acknowledgeMutation.isPending}>
             <CheckCircle2 className="h-4 w-4" />
-            Acknowledge All
+            {t("alerts.acknowledgeAll")}
           </Button>
         </div>
       </div>
@@ -112,7 +114,7 @@ export default function AlertsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search alert history..."
+            placeholder={t("alerts.searchPlaceholder")}
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -127,18 +129,18 @@ export default function AlertsPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              <TableHead className="w-[150px]">Severity</TableHead>
-              <TableHead>Alert Title</TableHead>
-              <TableHead className="hidden md:table-cell">Message</TableHead>
-              <TableHead>Time</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="w-[150px]">{t("alerts.severityHead")}</TableHead>
+              <TableHead>{t("alerts.titleHead")}</TableHead>
+              <TableHead className="hidden md:table-cell">{t("alerts.messageHead")}</TableHead>
+              <TableHead>{t("alerts.timeHead")}</TableHead>
+              <TableHead className="text-right">{t("alerts.actionsHead")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredAlerts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">
-                  No alerts found.
+                  {t("alerts.noAlerts")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -146,7 +148,7 @@ export default function AlertsPage() {
                 <TableRow key={alert.id} className={alert.is_resolved ? "opacity-60 grayscale-[0.5]" : ""}>
                   <TableCell>
                     <Badge variant="outline" className={SEVERITY_CONFIG[alert.severity]?.className || SEVERITY_CONFIG.info.className}>
-                      {SEVERITY_CONFIG[alert.severity]?.label || alert.severity}
+                      {SEVERITY_CONFIG[alert.severity] ? t(SEVERITY_CONFIG[alert.severity].labelKey) : alert.severity}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -159,7 +161,7 @@ export default function AlertsPage() {
                     {alert.message}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {new Date(alert.created_at).toLocaleString()}
+                    {new Date(alert.created_at).toLocaleString(language === "hr" ? "hr-HR" : "en-US")}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
@@ -169,7 +171,7 @@ export default function AlertsPage() {
                           size="icon" 
                           className="h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
                           onClick={() => handleAcknowledge(alert.id)}
-                          title="Acknowledge"
+                          title={t("alerts.acknowledgeAll")}
                           disabled={acknowledgeMutation.isPending}
                         >
                           <CheckCircle2 className="h-4 w-4" />

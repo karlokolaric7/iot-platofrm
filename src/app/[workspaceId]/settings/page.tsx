@@ -17,11 +17,13 @@ import {
 } from "@/components/ui/select";
 import { Building2, Save, Trash2, Globe, Lock, Shield, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/language-context";
 
 export default function WorkspaceSettingsPage() {
   const params = useParams();
   const router = useRouter();
   const workspaceId = params.workspaceId as string;
+  const { t, language } = useLanguage();
   
   const { data: workspace, isLoading } = useWorkspace(workspaceId);
   const updateMutation = useUpdateWorkspace();
@@ -56,29 +58,29 @@ export default function WorkspaceSettingsPage() {
           retention_days: parseInt(retention),
         }
       });
-      toast.success("Workspace settings updated");
+      toast.success(t("settings.updateSuccess"));
       // If slug changed, we need to redirect to the new URL
       if (wsSlug !== workspace.slug) {
         router.push(`/${wsSlug}/settings`);
       }
     } catch (error: unknown) {
       const err = error as Error;
-      toast.error(err.message || "Failed to update settings");
+      toast.error(err.message || t("settings.failedUpdate"));
     }
   };
 
   const handleDelete = async () => {
     if (!workspace) return;
-    if (!confirm("Are you sure you want to delete this workspace? All data, devices, and dashboards will be permanently lost. This action is irreversible.")) {
+    if (!confirm(t("settings.confirmDelete"))) {
       return;
     }
 
     try {
       await deleteMutation.mutateAsync(workspace.id);
-      toast.success("Workspace deleted successfully");
+      toast.success(t("settings.deleteSuccess"));
       router.push("/");
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete workspace");
+      toast.error(error.message || t("settings.failedDelete"));
     }
   };
 
@@ -87,7 +89,7 @@ export default function WorkspaceSettingsPage() {
       <div className="flex items-center justify-center p-12">
         <div className="text-center space-y-3 animate-pulse">
           <Building2 className="h-10 w-10 text-muted-foreground mx-auto opacity-20" />
-          <p className="text-muted-foreground font-medium">Loading workspace settings...</p>
+          <p className="text-muted-foreground font-medium">{t("settings.loading")}</p>
         </div>
       </div>
     );
@@ -96,9 +98,9 @@ export default function WorkspaceSettingsPage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Workspace Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("settings.title")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your workspace properties, security, and data retention.
+          {t("settings.desc")}
         </p>
       </div>
 
@@ -108,15 +110,15 @@ export default function WorkspaceSettingsPage() {
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
-              General Information
+              {t("settings.generalTitle")}
             </CardTitle>
             <CardDescription>
-              Basic information about this workspace.
+              {t("settings.generalDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Workspace Name</Label>
+              <Label htmlFor="name">{t("settings.workspaceNameLabel")}</Label>
               <Input 
                 id="name" 
                 value={wsName} 
@@ -125,7 +127,7 @@ export default function WorkspaceSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="slug">URL Slug</Label>
+              <Label htmlFor="slug">{t("settings.urlSlugLabel")}</Label>
               <Input 
                 id="slug" 
                 value={wsSlug} 
@@ -133,11 +135,11 @@ export default function WorkspaceSettingsPage() {
                 placeholder="e.g. acme-industrial" 
               />
               <p className="text-[10px] text-muted-foreground italic">
-                Changing the slug will change the URL of this workspace.
+                {t("settings.urlSlugDesc")}
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Internal ID (UUID)</Label>
+              <Label>{t("settings.internalIdLabel")}</Label>
               <div className="flex gap-2">
                 <code className="flex-1 bg-muted px-3 py-2 rounded-lg text-xs font-mono border truncate">
                   {workspace?.id}
@@ -145,10 +147,10 @@ export default function WorkspaceSettingsPage() {
                 <Button variant="outline" size="sm" onClick={() => {
                   if (workspace?.id) {
                     navigator.clipboard.writeText(workspace.id);
-                    toast.success("ID copied to clipboard");
+                    toast.success(t("settings.idCopied"));
                   }
                 }}>
-                  Copy
+                  {t("settings.copyBtn")}
                 </Button>
               </div>
             </div>
@@ -156,7 +158,7 @@ export default function WorkspaceSettingsPage() {
           <CardFooter className="border-t bg-muted/20 py-3">
             <Button onClick={handleSave} size="sm" className="ml-auto gap-2" disabled={updateMutation.isPending}>
               <Save className="h-4 w-4" />
-              Save Changes
+              {t("settings.saveChangesBtn")}
             </Button>
           </CardFooter>
         </Card>
@@ -166,33 +168,33 @@ export default function WorkspaceSettingsPage() {
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
-              Security & Visibility
+              {t("settings.securityTitle")}
             </CardTitle>
             <CardDescription>
-              Control who can see and access your data.
+              {t("settings.securityDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
-                  <Label className="text-sm font-medium">Public Workspace</Label>
+                  <Label className="text-sm font-medium">{t("settings.publicWorkspaceLabel")}</Label>
                   {isPublic ? <Globe className="h-3.5 w-3.5 text-blue-500" /> : <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Allow anyone with the link to view dashboards.
+                  {t("settings.publicWorkspaceDesc")}
                 </p>
               </div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} />
             </div>
 
             <div className="space-y-2">
-              <Label>Two-Factor Authentication</Label>
+              <Label>{t("settings.tfaLabel")}</Label>
               <p className="text-xs text-muted-foreground mb-3 font-normal">
-                Require all members to use 2FA for this workspace.
+                {t("settings.tfaDesc")}
               </p>
               <Button variant="outline" size="sm" disabled>
-                Configure Enforced 2FA (Pro)
+                {t("settings.tfaBtn")}
               </Button>
             </div>
           </CardContent>
@@ -203,28 +205,28 @@ export default function WorkspaceSettingsPage() {
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-primary" />
-              Data Retention
+              {t("settings.retentionTitle")}
             </CardTitle>
             <CardDescription>
-              Configure how long telemetry data is stored.
+              {t("settings.retentionDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>History Period</Label>
+              <Label>{t("settings.historyPeriodLabel")}</Label>
               <Select value={retention} onValueChange={(v) => setRetention(v || "30")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select period" />
+                  <SelectValue placeholder={t("settings.selectPeriodPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">7 Days (Free)</SelectItem>
-                  <SelectItem value="30">30 Days (Standard)</SelectItem>
-                  <SelectItem value="365">1 Year (Business)</SelectItem>
-                  <SelectItem value="0" disabled>Indefinite (Enterprise)</SelectItem>
+                  <SelectItem value="7">{t("settings.retentionOptions.d7")}</SelectItem>
+                  <SelectItem value="30">{t("settings.retentionOptions.d30")}</SelectItem>
+                  <SelectItem value="365">{t("settings.retentionOptions.y1")}</SelectItem>
+                  <SelectItem value="0" disabled>{t("settings.retentionOptions.infinite")}</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-[11px] text-muted-foreground italic font-normal">
-                Changing retention period may result in permanent deletion of older data.
+                {t("settings.retentionDescHelp")}
               </p>
             </div>
           </CardContent>
@@ -235,18 +237,18 @@ export default function WorkspaceSettingsPage() {
           <CardHeader className="bg-destructive/5">
             <CardTitle className="text-sm font-semibold text-destructive flex items-center gap-2">
               <Trash2 className="h-4 w-4" />
-              Danger Zone
+              {t("settings.dangerZoneTitle")}
             </CardTitle>
             <CardDescription>
-              Irreversible actions for this workspace.
+              {t("settings.dangerZoneDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label className="text-sm font-medium">Delete Workspace</Label>
+                <Label className="text-sm font-medium">{t("settings.deleteWorkspaceLabel")}</Label>
                 <p className="text-xs text-muted-foreground">
-                  Permanently remove this workspace and all associated devices, dashboards and data.
+                  {t("settings.deleteWorkspaceDesc")}
                 </p>
               </div>
               <Button 
@@ -255,7 +257,7 @@ export default function WorkspaceSettingsPage() {
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
               >
-                {deleteMutation.isPending ? "Deleting..." : "Delete Workspace"}
+                {deleteMutation.isPending ? t("settings.deleteWorkspaceBtn") : t("settings.deleteWorkspaceBtn")}
               </Button>
             </div>
           </CardContent>

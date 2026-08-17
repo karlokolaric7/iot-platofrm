@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/language-context";
 
 import { useCreateDevice } from "@/hooks/use-iot-data";
 import { useParams } from "next/navigation";
@@ -33,6 +34,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
   const createDevice = useCreateDevice();
+  const { t } = useLanguage();
 
   const [form, setForm] = useState({
     name: "",
@@ -72,13 +74,13 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
         longitude: form.longitude ? parseFloat(form.longitude) : null,
       } as any);
 
-      toast.success("Device added successfully", {
-        description: `"${form.name}" has been registered in your workspace.`,
+      toast.success(t("devices.successAdd"), {
+        description: t("devices.successAddDesc").replace("{name}", form.name),
       });
       onOpenChange(false);
       setForm({ name: "", deviceType: "generic", connectivity: "mqtt", serialNumber: "", devEui: "", appEui: "", appKey: "", description: "", tags: "", latitude: "", longitude: "" });
     } catch (error: any) {
-      toast.error(error.message || "Failed to add device");
+      toast.error(error.message || t("devices.failedAdd"));
     }
   }
 
@@ -89,18 +91,18 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Add New Device</DialogTitle>
+          <DialogTitle>{t("devices.addDeviceTitle")}</DialogTitle>
           <DialogDescription>
-            Register a new IoT device in your workspace. You can configure fields and payload decoders after creation.
+            {t("devices.addDeviceDesc")}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label htmlFor="device-name">Device Name <span className="text-destructive">*</span></Label>
+            <Label htmlFor="device-name">{t("devices.deviceNameLabel")} <span className="text-destructive">*</span></Label>
             <Input
               id="device-name"
-              placeholder="e.g. Boiler Room Sensor #1"
+              placeholder={t("devices.deviceNamePlaceholder")}
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
               required
@@ -109,13 +111,13 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Device Type <span className="text-destructive">*</span></Label>
+              <Label>{t("devices.deviceTypeLabel")} <span className="text-destructive">*</span></Label>
               <Select
                 value={form.deviceType}
                 onValueChange={(v) => handleChange("deviceType", v || "")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t("devices.deviceTypeSelectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="LoRaWAN">LoRaWAN</SelectItem>
@@ -127,13 +129,13 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Connectivity <span className="text-destructive">*</span></Label>
+              <Label>{t("devices.connectivityLabel")} <span className="text-destructive">*</span></Label>
               <Select
                 value={form.connectivity}
                 onValueChange={(v) => handleChange("connectivity", v || "")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select protocol" />
+                  <SelectValue placeholder={t("devices.connectivitySelectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="lorawan">LoRaWAN</SelectItem>
@@ -147,10 +149,10 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="serial">Serial Number</Label>
+              <Label htmlFor="serial">{t("devices.serialLabel")}</Label>
               <Input
                 id="serial"
-                placeholder="SN-00001"
+                placeholder={t("devices.serialPlaceholder")}
                 value={form.serialNumber}
                 onChange={(e) => handleChange("serialNumber", e.target.value)}
               />
@@ -158,7 +160,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
             {showEui && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="deveui">Device EUI</Label>
+                  <Label htmlFor="deveui">{t("devices.devEuiLabel")}</Label>
                   <Input
                     id="deveui"
                     placeholder="A8404157A1EAD1CF"
@@ -169,7 +171,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="appeui">App EUI (Join EUI)</Label>
+                  <Label htmlFor="appeui">{t("devices.appEuiLabel")}</Label>
                   <Input
                     id="appeui"
                     placeholder="0000000000000000"
@@ -180,7 +182,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
                   />
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="appkey">App Key (Network Key)</Label>
+                  <Label htmlFor="appkey">{t("devices.appKeyLabel")}</Label>
                   <Input
                     id="appkey"
                     placeholder="2B7E151628AED2A6ABF7158809CF4F3C"
@@ -191,7 +193,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
                     maxLength={32}
                   />
                   <p className="text-[10px] text-muted-foreground">
-                    This key will be sent to ChirpStack but not stored in our database for security.
+                    {t("devices.appKeyDesc")}
                   </p>
                 </div>
               </>
@@ -200,7 +202,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
 
           <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="latitude">Latitude</Label>
+              <Label htmlFor="latitude">{t("devices.latLabel")}</Label>
               <Input
                 id="latitude"
                 type="number"
@@ -211,7 +213,7 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="longitude">Longitude</Label>
+              <Label htmlFor="longitude">{t("devices.lngLabel")}</Label>
               <Input
                 id="longitude"
                 type="number"
@@ -224,25 +226,25 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">{t("devices.descriptionLabel")}</Label>
             <Input
               id="description"
-              placeholder="Optional device description"
+              placeholder={t("devices.descriptionPlaceholder")}
               value={form.description}
               onChange={(e) => handleChange("description", e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tags">Tags</Label>
+            <Label htmlFor="tags">{t("devices.tagsLabel")}</Label>
             <Input
               id="tags"
-              placeholder="temperature, zone-a, critical (comma-separated)"
+              placeholder={t("devices.tagsPlaceholder")}
               value={form.tags}
               onChange={(e) => handleChange("tags", e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Separate multiple tags with commas.
+              {t("devices.tagsDesc")}
             </p>
           </div>
 
@@ -252,13 +254,13 @@ export function AddDeviceDialog({ open, onOpenChange }: AddDeviceDialogProps) {
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t("devices.cancelBtn")}
             </Button>
             <Button
               type="submit"
               disabled={!form.name || !form.deviceType || !form.connectivity || isLoading}
             >
-              {isLoading ? "Adding..." : "Add Device"}
+              {isLoading ? t("devices.addingBtn") : t("devices.addDeviceBtn")}
             </Button>
           </DialogFooter>
         </form>

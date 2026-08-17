@@ -17,6 +17,7 @@ import { useDeviceDashboard, useUpdateWidgetLayouts, useDeleteWidget, useAddWidg
 import { DashboardWidget as DashboardWidgetType } from "@/lib/types";
 import { toast } from "sonner";
 import Link from "next/link";
+import { useLanguage } from "@/context/language-context";
 
 const STATUS_CONFIG: Record<
   Device["status"],
@@ -28,15 +29,16 @@ const STATUS_CONFIG: Record<
   unknown: { label: "Unknown", dotClass: "bg-slate-300", bgClass: "bg-slate-50 dark:bg-slate-900", textClass: "text-slate-500 dark:text-slate-500" },
 };
 
-function formatLastSeen(dateStr?: string | null) {
-  if (!dateStr) return "Never";
+function formatLastSeen(dateStr?: string | null, language?: string) {
+  const isHr = language === "hr";
+  if (!dateStr) return isHr ? "Nikada" : "Never";
   const date = new Date(dateStr);
   const now = new Date();
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return isHr ? `prije ${diff}s` : `${diff}s ago`;
+  if (diff < 3600) return isHr ? `prije ${Math.floor(diff / 60)}m` : `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return isHr ? `prije ${Math.floor(diff / 3600)}h` : `${Math.floor(diff / 3600)}h ago`;
+  return isHr ? `prije ${Math.floor(diff / 86400)}d` : `${Math.floor(diff / 86400)}d ago`;
 }
 
 export default function DeviceDetailPage({
@@ -46,6 +48,7 @@ export default function DeviceDetailPage({
 }) {
   const router = useRouter();
   const { workspaceId, deviceId } = use(params);
+  const { t, language } = useLanguage();
   const { data: dbDevice, isLoading } = useDevice(deviceId);
   const { data: chirpstackData } = useChirpstackDevice(dbDevice?.dev_eui);
   const [isEditingDashboard, setIsEditingDashboard] = useState(false);
@@ -58,7 +61,7 @@ export default function DeviceDetailPage({
   const addWidget = useAddWidget();
   const updateWidget = useUpdateWidget();
 
-  if (isLoading || isLoadingDashboard) return <div className="p-8 text-center text-slate-500 font-medium">Loading device details...</div>;
+  if (isLoading || isLoadingDashboard) return <div className="p-8 text-center text-slate-500 font-medium">{t("devices.loadingDetails")}</div>;
   if (!dbDevice) notFound();
 
   // Merge Live Sync Status
@@ -73,6 +76,10 @@ export default function DeviceDetailPage({
   };
 
   const statusConfig = STATUS_CONFIG[device.status as Device['status']] || STATUS_CONFIG["unknown"];
+  const statusLabel = 
+    device.status === "online" ? t("devices.statusOnline") :
+    device.status === "offline" ? t("devices.statusOffline") :
+    device.status === "warning" ? t("devices.statusWarning") : t("devices.statusUnknown");
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 font-sans">
@@ -80,7 +87,7 @@ export default function DeviceDetailPage({
       <div className="flex items-center gap-2 text-sm font-semibold text-slate-500 mb-2">
         <Link href={`/${workspaceId}/devices`} className="hover:text-indigo-600 flex items-center gap-1 transition-colors">
           <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-          Fleet Management
+          {t("devices.fleetManagement")}
         </Link>
         <span className="text-slate-300 dark:text-slate-700">/</span>
         <span className="text-slate-900 dark:text-slate-100">{device.name}</span>
@@ -99,19 +106,19 @@ export default function DeviceDetailPage({
                 <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">{device.name}</h1>
                 <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider shadow-sm", statusConfig.bgClass, statusConfig.textClass)}>
                   <span className={cn("w-1.5 h-1.5 rounded-full", statusConfig.dotClass, device.status === 'online' ? "animate-pulse" : "")}></span>
-                  {statusConfig.label}
+                  {statusLabel}
                 </span>
                 {device.isLive && (
                   <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200 dark:border-emerald-500/20 uppercase tracking-wider">
                     <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                    Live Sync
+                    {t("devices.liveSync")}
                   </span>
                 )}
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
                 <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">tag</span> EUI: {device.serial_number || device.dev_eui || "N/A"}</div>
                 <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">cell_tower</span> {(device.connectivity || "unknown").toUpperCase()}</div>
-                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">update</span> Last seen: {formatLastSeen(device.last_seen)}</div>
+                <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[16px]">update</span> {t("devices.lastActive")}: {formatLastSeen(device.last_seen, language)}</div>
               </div>
             </div>
           </div>
@@ -121,14 +128,14 @@ export default function DeviceDetailPage({
               className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm"
             >
               <span className="material-symbols-outlined text-[18px]">settings</span>
-              Configure
+              {t("devices.configure")}
             </button>
             <button 
               onClick={() => router.refresh()}
               className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm shadow-indigo-200 dark:shadow-none"
             >
               <span className="material-symbols-outlined text-[18px]">refresh</span>
-              Sync
+              {t("devices.sync")}
             </button>
           </div>
         </div>
@@ -137,44 +144,44 @@ export default function DeviceDetailPage({
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="bg-transparent h-auto p-0 flex overflow-x-auto w-full justify-start border-b border-slate-200 dark:border-slate-800 hide-scrollbar gap-2 mb-6">
           <TabsTrigger value="dashboard" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
-            <span className="material-symbols-outlined text-[18px]">dashboard</span> Dashboard
+            <span className="material-symbols-outlined text-[18px]">dashboard</span> {t("devices.dashboard")}
           </TabsTrigger>
           <TabsTrigger value="history" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
-            <span className="material-symbols-outlined text-[18px]">history</span> Telemetry History
+            <span className="material-symbols-outlined text-[18px]">history</span> {t("devices.history")}
           </TabsTrigger>
           <TabsTrigger value="downlinks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
-            <span className="material-symbols-outlined text-[18px]">arrow_downward</span> Downlinks
+            <span className="material-symbols-outlined text-[18px]">arrow_downward</span> {t("devices.downlinks")}
           </TabsTrigger>
           <TabsTrigger value="configuration" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
-            <span className="material-symbols-outlined text-[18px]">account_tree</span> Payload Decoders
+            <span className="material-symbols-outlined text-[18px]">account_tree</span> {t("devices.payloadDecoders")}
           </TabsTrigger>
           <TabsTrigger value="debug" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-2 whitespace-nowrap transition-colors">
-            <span className="material-symbols-outlined text-[18px]">bug_report</span> Debug
+            <span className="material-symbols-outlined text-[18px]">bug_report</span> {t("devices.debug")}
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6 outline-none">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Live Telemetry</h2>
-              <p className="text-xs font-semibold text-slate-500">Customizable real-time widget view</p>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t("devices.liveTelemetry")}</h2>
+              <p className="text-xs font-semibold text-slate-500">{t("devices.liveTelemetryDesc")}</p>
             </div>
             <div className="flex items-center gap-2">
               {isEditingDashboard ? (
                 <>
                   <button onClick={() => setIsAddingWidget(true)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors shadow-sm text-slate-700 dark:text-slate-300">
                     <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                    Add Widget
+                    {t("devices.addWidget")}
                   </button>
                   <button onClick={() => setIsEditingDashboard(false)} className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 border border-emerald-200 dark:border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 px-3 py-1.5 rounded-lg font-bold text-xs transition-colors shadow-sm">
                     <span className="material-symbols-outlined text-[16px]">check</span>
-                    Save Layout
+                    {t("devices.saveLayout")}
                   </button>
                 </>
               ) : (
                 <button onClick={() => setIsEditingDashboard(true)} className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors shadow-sm text-slate-700 dark:text-slate-300">
                   <span className="material-symbols-outlined text-[16px]">dashboard_customize</span>
-                  Edit Dashboard
+                  {t("devices.editDashboard")}
                 </button>
               )}
             </div>
@@ -188,16 +195,16 @@ export default function DeviceDetailPage({
               <>
                 <div className="absolute -top-3 left-4 z-20 flex items-center gap-1.5 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest shadow-sm">
                   <span className="material-symbols-outlined text-[14px]">drag_indicator</span>
-                  Edit Mode Active
+                  {t("devices.editModeActive")}
                 </div>
                 <div className="mb-4 bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800 rounded-lg p-3 flex items-start gap-3">
                   <div className="bg-teal-100 dark:bg-teal-800 text-teal-600 dark:text-teal-400 p-1.5 rounded-md mt-0.5">
                     <span className="material-symbols-outlined text-[18px]">lightbulb</span>
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-teal-900 dark:text-teal-100">Pro Tip</h4>
+                    <h4 className="text-sm font-bold text-teal-900 dark:text-teal-100">{t("devices.proTip")}</h4>
                     <p className="text-xs font-medium text-teal-700 dark:text-teal-300 mt-0.5">
-                      Grab any widget's top header to drag and reorder. Pull from the bottom corners to resize.
+                      {t("devices.proTipDesc")}
                     </p>
                   </div>
                 </div>
@@ -219,15 +226,15 @@ export default function DeviceDetailPage({
                       h: w.h
                     })));
                   } catch (err) {
-                    toast.error("Failed to save layout");
+                    toast.error(t("devices.failedSaveLayout"));
                   }
                 }}
                 onWidgetDelete={async (id: string) => {
                   try {
                     await deleteWidget.mutateAsync({ id, dashboardId: dashboard.id });
-                    toast.success("Widget removed");
+                    toast.success(t("devices.widgetRemoved"));
                   } catch (err) {
-                    toast.error("Failed to remove widget");
+                    toast.error(t("devices.failedRemoveWidget"));
                   }
                 }}
                 onWidgetEdit={(widget: DashboardWidgetType) => {
@@ -240,14 +247,14 @@ export default function DeviceDetailPage({
                 <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-4">
                   <span className="material-symbols-outlined text-[24px]">widgets</span>
                 </div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100">No Widgets Configured</h3>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100">{t("devices.noWidgetsTitle")}</h3>
                 <p className="text-sm font-medium text-slate-500 max-w-xs mt-1 mb-6">
-                  Add widgets to visualize the live data streaming from this device.
+                  {t("devices.noWidgetsDesc")}
                 </p>
                 {!isEditingDashboard && (
                   <button onClick={() => setIsEditingDashboard(true)} className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 px-4 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm">
                     <span className="material-symbols-outlined text-[18px]">add</span>
-                    Configure Dashboard
+                    {t("devices.editDashboard")}
                   </button>
                 )}
               </div>
@@ -270,9 +277,9 @@ export default function DeviceDetailPage({
                   ...widget as any,
                   dashboard_id: dashboard.id
                 });
-                toast.success("Widget added");
+                toast.success(t("devices.widgetAdded"));
               } catch (err) {
-                toast.error("Failed to add widget");
+                toast.error(t("devices.failedAddWidget"));
               }
             }}
             onUpdateWidget={async (id: string, updates: Partial<DashboardWidgetType>) => {
@@ -282,9 +289,9 @@ export default function DeviceDetailPage({
                   id,
                   ...updates as any
                 });
-                toast.success("Widget updated");
+                toast.success(t("devices.widgetUpdated"));
               } catch (err) {
-                toast.error("Failed to update widget");
+                toast.error(t("devices.failedUpdateWidget"));
               }
             }}
           />

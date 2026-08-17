@@ -24,6 +24,7 @@ import {
 import { Plus, Zap, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Database } from "@/lib/supabase/database.types";
+import { useLanguage } from "@/context/language-context";
 
 type Rule = Database['public']['Tables']['rules']['Row'];
 
@@ -35,26 +36,11 @@ interface RuleDialogProps {
   trigger?: React.ReactElement;
 }
 
-const OPERATORS = [
-  { label: "Greater than (>)", value: "gt" },
-  { label: "Less than (<)", value: "lt" },
-  { label: "Equal to (=)", value: "eq" },
-  { label: "Greater or equal (≥)", value: "gte" },
-  { label: "Less or equal (≤)", value: "lte" },
-  { label: "Not equal (≠)", value: "neq" },
-];
-
-const ACTION_TYPES = [
-  { label: "Send Email", value: "email" },
-  { label: "Send SMS", value: "sms" },
-  { label: "In-App Notification", value: "in_app" },
-  { label: "Webhook Call", value: "webhook" },
-];
-
 export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChange, trigger }: RuleDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = onOpenChange ?? setInternalOpen;
+  const { t, language } = useLanguage();
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -68,6 +54,22 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
   const { data: devices = [] } = useDevices(workspaceId);
   const createMutation = useCreateRule();
   const updateMutation = useUpdateRule();
+
+  const translatedOperators = [
+    { label: language === "hr" ? "Veće od (>)" : "Greater than (>)", value: "gt" },
+    { label: language === "hr" ? "Manje od (<)" : "Less than (<)", value: "lt" },
+    { label: language === "hr" ? "Jednako (=)" : "Equal to (=)", value: "eq" },
+    { label: language === "hr" ? "Veće ili jednako (≥)" : "Greater or equal (≥)", value: "gte" },
+    { label: language === "hr" ? "Manje ili jednako (≤)" : "Less or equal (≤)", value: "lte" },
+    { label: language === "hr" ? "Nije jednako (≠)" : "Not equal (≠)", value: "neq" },
+  ];
+
+  const translatedActionTypes = [
+    { label: language === "hr" ? "Pošalji e-mail" : "Send Email", value: "email" },
+    { label: language === "hr" ? "Pošalji SMS" : "Send SMS", value: "sms" },
+    { label: language === "hr" ? "Obavijest unutar aplikacije" : "In-App Notification", value: "in_app" },
+    { label: language === "hr" ? "Poziv web-kuke (Webhook)" : "Webhook Call", value: "webhook" },
+  ];
 
   // Initialize form when rule changes or dialog opens
   useEffect(() => {
@@ -112,7 +114,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
     e.preventDefault();
 
     if (!name || !selectedDeviceId || !selectedFieldId || !value) {
-      toast.error("Please fill in all required fields");
+      toast.error(t("rules.validationFillAll"));
       return;
     }
 
@@ -147,15 +149,15 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
     try {
       if (rule) {
         await updateMutation.mutateAsync({ id: rule.id, ...ruleData });
-        toast.success("Rule updated successfully");
+        toast.success(t("rules.successUpdate"));
       } else {
         await createMutation.mutateAsync(ruleData);
-        toast.success("Rule created successfully");
+        toast.success(t("rules.successCreate"));
       }
       setOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error(error.message || `Failed to ${rule ? 'update' : 'create'} rule`);
+      toast.error(error.message || (rule ? t("rules.failedUpdate") : t("rules.failedCreate")));
     }
   }
 
@@ -176,25 +178,25 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
       {!trigger && !rule && (
         <DialogTrigger render={<Button className="gap-2" />}>
           <Plus className="h-4 w-4" />
-          New Rule
+          {t("rules.newRule")}
         </DialogTrigger>
       )}
       
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{rule ? 'Edit Rule' : 'Create New Rule'}</DialogTitle>
+            <DialogTitle>{rule ? t("rules.editRuleTitle") : t("rules.createRuleTitle")}</DialogTitle>
             <DialogDescription>
-              {rule ? 'Update your automation rule settings.' : 'Define automation and alerts based on your device data.'}
+              {rule ? t("rules.updateRuleDesc") : t("rules.createRuleDesc")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-5 py-6">
             <div className="grid gap-2">
-              <Label htmlFor="name">Rule Name</Label>
+              <Label htmlFor="name">{t("rules.nameLabel")}</Label>
               <Input
                 id="name"
-                placeholder="e.g. High CO2 Alert"
+                placeholder={t("rules.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -204,16 +206,16 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-semibold text-primary">
                 <Zap className="h-4 w-4" />
-                Trigger Condition (IF)
+                {t("rules.triggerConditionTitle")}
               </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Device</Label>
+                  <Label className="text-xs">{t("rules.deviceLabel")}</Label>
                   <Select value={selectedDeviceId} onValueChange={(val) => setSelectedDeviceId(val || "")}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select device">
-                        {selectedDevice ? selectedDevice.name : "Select device"}
+                      <SelectValue placeholder={t("rules.selectDevicePlaceholder")}>
+                        {selectedDevice ? selectedDevice.name : t("rules.selectDevicePlaceholder")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -226,17 +228,17 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
                   </Select>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Field</Label>
+                  <Label className="text-xs">{t("rules.fieldLabel")}</Label>
                   <Select 
                     value={selectedFieldId} 
                     onValueChange={(val) => setSelectedFieldId(val || "")}
                     disabled={!selectedDeviceId}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select field">
+                      <SelectValue placeholder={t("rules.selectFieldPlaceholder")}>
                         {selectedFieldId && fields.length > 0 
-                          ? fields.find((f: any) => f.id === selectedFieldId)?.alias || fields.find((f: any) => f.id === selectedFieldId)?.name || "Select field"
-                          : "Select field"}
+                          ? fields.find((f: any) => f.id === selectedFieldId)?.alias || fields.find((f: any) => f.id === selectedFieldId)?.name || t("rules.selectFieldPlaceholder")
+                          : t("rules.selectFieldPlaceholder")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -252,13 +254,13 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Operator</Label>
+                  <Label className="text-xs">{t("rules.operatorLabel")}</Label>
                   <Select value={operator} onValueChange={(val) => setOperator(val || "")}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {OPERATORS.map((op) => (
+                      {translatedOperators.map((op) => (
                         <SelectItem key={op.value} value={op.value}>
                           {op.label}
                         </SelectItem>
@@ -267,11 +269,11 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
                   </Select>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Value</Label>
+                  <Label className="text-xs">{t("rules.valueLabel")}</Label>
                   <Input
                     type="number"
                     step="any"
-                    placeholder="Threshold"
+                    placeholder={t("rules.valuePlaceholder")}
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                   />
@@ -282,18 +284,18 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
             <div className="space-y-3 pt-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-emerald-500">
                 <AlertCircle className="h-4 w-4" />
-                Action (THEN)
+                {t("rules.actionTitle")}
               </div>
               
               <div className="grid grid-cols-2 gap-3">
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Action Type</Label>
+                  <Label className="text-xs">{t("rules.actionTypeLabel")}</Label>
                   <Select value={actionType} onValueChange={(val) => setActionType(val || "")}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {ACTION_TYPES.map((action) => (
+                      {translatedActionTypes.map((action) => (
                         <SelectItem key={action.value} value={action.value}>
                           {action.label}
                         </SelectItem>
@@ -302,7 +304,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
                   </Select>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label className="text-xs">Target</Label>
+                  <Label className="text-xs">{t("rules.targetLabel")}</Label>
                   <Input
                     placeholder={
                       actionType === "email"
@@ -311,7 +313,7 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
                         ? "+1234567890"
                         : actionType === "webhook"
                         ? "https://discord.com/api/webhooks/..."
-                        : "Target identifier"
+                        : t("rules.targetPlaceholderDefault")
                     }
                     value={actionTarget}
                     onChange={(e) => setActionTarget(e.target.value)}
@@ -328,10 +330,10 @@ export function RuleDialog({ workspaceId, rule, open: controlledOpen, onOpenChan
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t("rules.cancel")}
             </Button>
             <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-              {rule ? 'Save Changes' : 'Create Rule'}
+              {rule ? t("rules.saveChanges") : t("rules.createRule")}
             </Button>
           </DialogFooter>
         </form>

@@ -23,11 +23,14 @@ import {
   Play
 } from "lucide-react";
 
+import { useLanguage } from "@/context/language-context";
+
 interface DeviceDownlinksTabProps {
   deviceId: string;
 }
 
 export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
+  const { t } = useLanguage();
   const { data: downlinks = [], isLoading } = useDeviceDownlinks(deviceId);
   const scheduleDownlink = useScheduleDownlink();
   const updateStatus = useUpdateDownlinkStatus();
@@ -50,31 +53,31 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
   function validatePayload(): boolean {
     const trimmed = payload.trim();
     if (!trimmed) {
-      toast.error("Payload cannot be empty");
+      toast.error(t("downlinks.errorEmpty"));
       return false;
     }
 
     if (payloadType === "hex") {
       const cleanHex = trimmed.replace(/\s+/g, "");
       if (!/^[0-9a-fA-F]+$/.test(cleanHex)) {
-        toast.error("Hex payload can only contain numbers (0-9) and letters (A-F)");
+        toast.error(t("downlinks.errorHexChars"));
         return false;
       }
       if (cleanHex.length % 2 !== 0) {
-        toast.error("Hex payload must have an even number of characters (complete bytes)");
+        toast.error(t("downlinks.errorHexBytes"));
         return false;
       }
     } else if (payloadType === "base64") {
       try {
         atob(trimmed);
       } catch {
-        toast.error("Invalid Base64 string");
+        toast.error(t("downlinks.errorBase64"));
         return false;
       }
     }
 
     if (fPort < 1 || fPort > 223) {
-      toast.error("FPort must be between 1 and 223");
+      toast.error(t("downlinks.errorFPort"));
       return false;
     }
 
@@ -95,9 +98,9 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
         confirmed
       });
       setPayload("");
-      toast.success("Downlink queued successfully");
+      toast.success(t("downlinks.successQueue"));
     } catch (err: any) {
-      toast.error(err.message || "Failed to queue downlink");
+      toast.error(err.message || t("downlinks.failedQueue"));
     } finally {
       setIsSubmitting(false);
     }
@@ -110,9 +113,9 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
         deviceId,
         status: "cancelled"
       });
-      toast.success("Downlink cancelled");
+      toast.success(t("downlinks.successCancel"));
     } catch (err: any) {
-      toast.error(err.message || "Failed to cancel downlink");
+      toast.error(err.message || t("downlinks.failedCancel"));
     }
   }
 
@@ -124,9 +127,9 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
         status: "sent",
         sent_at: new Date().toISOString()
       });
-      toast.success("Simulation successful: Downlink sent to device");
+      toast.success(t("downlinks.successSimulate"));
     } catch (err: any) {
-      toast.error(err.message || "Failed to simulate transmission");
+      toast.error(err.message || t("downlinks.failedSimulate"));
     }
   }
 
@@ -148,10 +151,10 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
         <div>
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Send className="h-4 w-4 text-indigo-500" />
-            Schedule Downlink
+            {t("downlinks.scheduleTitle")}
           </h3>
           <p className="text-xs text-slate-500 font-semibold mt-1">
-            Send a payload command back to the device.
+            {t("downlinks.scheduleDesc")}
           </p>
         </div>
 
@@ -161,7 +164,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="fport" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                LoRaWAN FPort
+                {t("downlinks.fPort")}
               </Label>
               <input
                 id="fport"
@@ -177,7 +180,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
             <div className="space-y-1.5 flex flex-col justify-end">
               <div className="flex items-center justify-between h-[38px] bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-lg px-3">
                 <Label htmlFor="confirmed-mode" className="text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
-                  Confirmed
+                  {t("downlinks.confirmed")}
                 </Label>
                 <Switch
                   id="confirmed-mode"
@@ -191,7 +194,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
           {/* Payload Format Selector */}
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-slate-600 dark:text-slate-300">
-              Payload Format
+              {t("downlinks.payloadFormat")}
             </Label>
             <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
               {(["hex", "base64", "text"] as const).map((format) => (
@@ -219,7 +222,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="payload" className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                Payload Value
+                {t("downlinks.payloadValue")}
               </Label>
               <span className="text-[9px] font-bold text-slate-400 uppercase">
                 {payloadType === "hex" && "e.g. 01 2C"}
@@ -234,10 +237,10 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
               onChange={(e) => setPayload(e.target.value)}
               placeholder={
                 payloadType === "hex"
-                  ? "Enter hex bytes..."
+                  ? t("downlinks.enterHex")
                   : payloadType === "base64"
-                  ? "Enter Base64 encoded payload..."
-                  : "Enter text command..."
+                  ? t("downlinks.enterBase64")
+                  : t("downlinks.enterText")
               }
               className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-lg p-3 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
             />
@@ -250,7 +253,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
             className="w-full h-9 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 rounded-lg shadow-sm"
           >
             <Send className="h-3.5 w-3.5" />
-            {isSubmitting ? "Queueing..." : "Queue Downlink"}
+            {isSubmitting ? t("downlinks.queueing") : t("downlinks.queueButton")}
           </Button>
         </form>
       </div>
@@ -261,29 +264,29 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Radio className="h-4 w-4 text-indigo-500" />
-              Downlink Queue
+              {t("downlinks.queueTitle")}
             </h3>
             <p className="text-xs text-slate-500 font-semibold mt-1">
-              Active and historical downlink commands.
+              {t("downlinks.queueDesc")}
             </p>
           </div>
           <Badge variant="outline" className="text-[10px] font-bold bg-slate-50 dark:bg-slate-800/40">
-            {downlinks.length} total
+            {downlinks.length} {t("downlinks.total")}
           </Badge>
         </div>
 
         {isLoading ? (
           <div className="text-center py-10 text-xs font-semibold text-slate-455">
-            Loading downlink queue...
+            {t("downlinks.loading")}
           </div>
         ) : downlinks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed border-slate-200 dark:border-slate-800/80 rounded-xl bg-slate-50/40 dark:bg-slate-900/40">
             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mb-3">
               <ArrowDown className="h-5 w-5" />
             </div>
-            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">Queue is empty</h4>
+            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{t("downlinks.emptyTitle")}</h4>
             <p className="text-[11px] text-slate-500 max-w-xs mt-1">
-              No downlinks have been scheduled yet. Use the scheduler form to queue your first command.
+              {t("downlinks.emptyDesc")}
             </p>
           </div>
         ) : (
@@ -291,12 +294,12 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 text-[10px] font-bold uppercase tracking-wider text-slate-550 border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-3 px-4">Scheduled</th>
-                  <th className="py-3 px-3">FPort</th>
-                  <th className="py-3 px-3">Type</th>
-                  <th className="py-3 px-4">Payload</th>
-                  <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-4">{t("downlinks.headScheduled")}</th>
+                  <th className="py-3 px-3">{t("downlinks.headFPort")}</th>
+                  <th className="py-3 px-3">{t("downlinks.headType")}</th>
+                  <th className="py-3 px-4">{t("downlinks.headPayload")}</th>
+                  <th className="py-3 px-3 text-center">{t("downlinks.headStatus")}</th>
+                  <th className="py-3 px-4 text-right">{t("downlinks.headActions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
@@ -325,7 +328,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
                               : "border-slate-200 bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                           )}
                         >
-                          {dl.confirmed ? "CONFIRMED" : "UNCONFIRMED"}
+                          {dl.confirmed ? t("downlinks.badgeConfirmed") : t("downlinks.badgeUnconfirmed")}
                         </Badge>
                       </td>
 
@@ -336,6 +339,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
                             {isRevealed ? dl.payload_raw : "••••••••"}
                           </span>
                           <button
+                            type="button"
                             onClick={() => toggleReveal(dl.id)}
                             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                             title={isRevealed ? "Hide payload" : "Show payload"}
@@ -354,19 +358,19 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
                           {dl.status === "pending" && (
                             <Badge className="bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 text-[10px] font-bold gap-1 shadow-2xs">
                               <Clock className="h-3 w-3" />
-                              Pending
+                              {t("downlinks.statusPending")}
                             </Badge>
                           )}
                           {dl.status === "sent" && (
                             <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 text-[10px] font-bold gap-1 shadow-2xs">
                               <CheckCircle2 className="h-3 w-3" />
-                              Sent
+                              {t("downlinks.statusSent")}
                             </Badge>
                           )}
                           {dl.status === "cancelled" && (
                             <Badge className="bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700/60 text-[10px] font-bold gap-1 shadow-2xs">
                               <XCircle className="h-3 w-3" />
-                              Cancelled
+                              {t("downlinks.statusCancelled")}
                             </Badge>
                           )}
                         </span>
@@ -382,7 +386,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
                               title="Simulate device receiving this downlink"
                             >
                               <Play className="h-3 w-3 fill-indigo-700 dark:fill-indigo-400" />
-                              Simulate
+                              {t("downlinks.actionSimulate")}
                             </button>
                             <button
                               onClick={() => handleCancel(dl.id)}
@@ -394,7 +398,7 @@ export function DeviceDownlinksTab({ deviceId }: DeviceDownlinksTabProps) {
                           </div>
                         ) : dl.sent_at ? (
                           <span className="text-[10px] font-semibold text-slate-400 whitespace-nowrap">
-                            Sent at {formatTimestamp(dl.sent_at)}
+                            {t("downlinks.sentAt").replace("{time}", formatTimestamp(dl.sent_at))}
                           </span>
                         ) : (
                           <span className="text-[10px] font-semibold text-slate-400">

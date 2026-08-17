@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { RuleDialog } from "@/components/rules/add-rule-dialog";
+import { useLanguage } from "@/context/language-context";
 
 const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   email: Mail,
@@ -25,14 +26,15 @@ const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
   in_app: Bell,
 };
 
-function formatDate(dateStr?: string | null) {
-  if (!dateStr) return "Never";
-  return new Date(dateStr).toLocaleString();
+function formatDate(dateStr?: string | null, lang: string = "en") {
+  if (!dateStr) return lang === "hr" ? "Nikada" : "Never";
+  return new Date(dateStr).toLocaleString(lang === "hr" ? "hr-HR" : "en-US");
 }
 
 export default function RulesPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
+  const { t, language } = useLanguage();
   
   const { data: rules = [], isLoading } = useRules(workspaceId);
   const toggleMutation = useToggleRule();
@@ -41,34 +43,34 @@ export default function RulesPage() {
   async function handleToggleRule(id: string, is_active: boolean) {
     try {
       await toggleMutation.mutateAsync({ id, is_active });
-      toast.success(is_active ? "Rule enabled" : "Rule disabled");
+      toast.success(is_active ? t("rules.ruleEnabled") : t("rules.ruleDisabled"));
     } catch (error: any) {
-      toast.error(error.message || "Failed to toggle rule");
+      toast.error(error.message || t("rules.failedToggle"));
     }
   }
 
   async function handleDeleteRule(id: string) {
-    if (!confirm("Are you sure you want to delete this rule?")) return;
+    if (!confirm(t("rules.confirmDelete"))) return;
     
     try {
       await deleteMutation.mutateAsync({ id, workspaceId });
-      toast.success("Rule deleted");
+      toast.success(t("rules.ruleDeleted"));
     } catch (error: any) {
-      toast.error(error.message || "Failed to delete rule");
+      toast.error(error.message || t("rules.failedDelete"));
     }
   }
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground font-medium animate-pulse">Loading rules engine...</div>;
+    return <div className="p-8 text-center text-muted-foreground font-medium animate-pulse">{t("rules.loading")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Rule Engine</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("rules.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Create automated if-this-then-that rules for alerts and actions.
+            {t("rules.desc")}
           </p>
         </div>
         <RuleDialog workspaceId={workspaceId} />
@@ -78,14 +80,14 @@ export default function RulesPage() {
       <div className="flex items-center gap-6 rounded-xl border bg-card px-5 py-3 shadow-sm">
         <div>
           <span className="text-2xl font-bold">{rules.length}</span>
-          <span className="text-sm text-muted-foreground ml-1.5">Total Rules</span>
+          <span className="text-sm text-muted-foreground ml-1.5">{t("rules.totalRules")}</span>
         </div>
         <div className="h-8 w-px bg-border" />
         <div>
           <span className="text-2xl font-bold text-emerald-500">
             {rules.filter(r => r.is_active).length}
           </span>
-          <span className="text-sm text-muted-foreground ml-1.5">Active</span>
+          <span className="text-sm text-muted-foreground ml-1.5">{t("rules.active")}</span>
         </div>
       </div>
 
@@ -94,7 +96,7 @@ export default function RulesPage() {
         {rules.length === 0 ? (
           <div className="rounded-xl border border-dashed py-12 flex flex-col items-center justify-center text-muted-foreground space-y-3">
             <Zap className="h-8 w-8 opacity-20" />
-            <p className="text-sm">No rules defined for this workspace.</p>
+            <p className="text-sm">{t("rules.noRulesTitle")}</p>
             <RuleDialog workspaceId={workspaceId} />
           </div>
         ) : (
@@ -129,7 +131,7 @@ export default function RulesPage() {
                       {/* Conditions */}
                       {conditions.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2 mt-3">
-                          <span className="text-xs text-muted-foreground font-medium">IF</span>
+                          <span className="text-xs text-muted-foreground font-medium">{t("rules.if")}</span>
                           {conditions.map((cond: any, i: number) => (
                             <span key={i} className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs">
                               <span className="font-medium">{cond.fieldName}</span>
@@ -144,13 +146,19 @@ export default function RulesPage() {
 
                       {/* Actions */}
                       <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <span className="text-xs text-muted-foreground font-medium">THEN</span>
+                        <span className="text-xs text-muted-foreground font-medium">{t("rules.then")}</span>
                         {actions.map((action: any, i: number) => {
                           const ActionIcon = ACTION_ICONS[action.type] || Bell;
+                          const actionTypeName = {
+                            email: language === "hr" ? "E-mail" : "Email",
+                            sms: "SMS",
+                            in_app: language === "hr" ? "Obavijest" : "In-App",
+                            webhook: "Webhook",
+                          }[action.type as string] || action.type;
                           return (
                             <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs">
                               <ActionIcon className="h-3 w-3 text-primary" />
-                              <span className="capitalize">{action.type}</span>
+                              <span className="capitalize">{actionTypeName}</span>
                               <span className="text-muted-foreground truncate max-w-[120px]">{action.target}</span>
                             </span>
                           );

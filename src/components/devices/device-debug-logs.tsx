@@ -11,8 +11,10 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { useLanguage } from "@/context/language-context";
 
 export function DeviceDebugLogs({ deviceId }: { deviceId: string }) {
+  const { t } = useLanguage();
   useRealtimeDeviceLogs(deviceId);
   const { data: logs = [], isLoading } = useLatestDeviceLogs(deviceId);
 
@@ -21,12 +23,12 @@ export function DeviceDebugLogs({ deviceId }: { deviceId: string }) {
       <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-900/50">
         <div className="flex items-center gap-2">
           <Terminal className="h-4 w-4 text-emerald-500" />
-          <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest">Live Payload Debugger</span>
+          <span className="text-xs font-mono font-bold text-slate-300 uppercase tracking-widest">{t("liveLogs.title")}</span>
         </div>
         <div className="flex items-center gap-2">
            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-medium border border-emerald-500/20">
               <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-              Syncing
+              {t("liveLogs.syncing")}
            </div>
         </div>
       </div>
@@ -35,12 +37,12 @@ export function DeviceDebugLogs({ deviceId }: { deviceId: string }) {
         {isLoading ? (
           <div className="flex items-center justify-center h-full text-slate-500 space-x-2">
             <RefreshCcw className="h-4 w-4 animate-spin" />
-            <span>Scanning for uplinks...</span>
+            <span>{t("liveLogs.scanning")}</span>
           </div>
         ) : logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-2 opacity-50">
              <Clock className="h-8 w-8 stroke-[1px]" />
-             <span>Waiting for device join or uplink...</span>
+             <span>{t("liveLogs.waiting")}</span>
           </div>
         ) : (
           logs.map((log: any, i: number) => (
@@ -62,8 +64,8 @@ export function DeviceDebugLogs({ deviceId }: { deviceId: string }) {
                     )}
                     {log.data_base64 && (
                       <>
-                        <ArrowRight className="h-3 w-3 text-slate-700" />
-                        <span className="text-emerald-400 font-bold truncate max-w-[200px]">{log.data_base64}</span>
+                         <ArrowRight className="h-3 w-3 text-slate-700" />
+                         <span className="text-emerald-400 font-bold truncate max-w-[200px]">{log.data_base64}</span>
                       </>
                     )}
                   </div>
@@ -72,7 +74,7 @@ export function DeviceDebugLogs({ deviceId }: { deviceId: string }) {
                     <div className="mt-1 p-2 rounded bg-slate-900/80 border border-slate-800 text-[11px] text-slate-400 overflow-x-auto whitespace-pre group-hover:border-slate-700 transition-colors">
                       <div className="flex items-center gap-2 mb-1 border-b border-slate-800 pb-1 text-slate-500 uppercase text-[9px] font-bold">
                         <Database className="h-3 w-3" />
-                        Raw Payload
+                        {t("liveLogs.rawPayload")}
                       </div>
                       {JSON.stringify(log.raw_payload, null, 2)}
                     </div>

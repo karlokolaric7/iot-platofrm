@@ -33,6 +33,7 @@ import {
   Area,
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/context/language-context";
 
 // Historical data is fetched from live Supabase measurements via useHistoricalData hook.
 
@@ -42,6 +43,7 @@ import { useParams } from "next/navigation";
 export default function DataExplorerPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
+  const { t, language } = useLanguage();
   
   const [selectedDevice, setSelectedDevice] = useState("");
   const [selectedField, setSelectedField] = useState("");
@@ -61,13 +63,13 @@ export default function DataExplorerPage() {
   const fields = (selectedDeviceObj as any)?.fields || [];
   
   const chartData = deviceDetails?.map(m => ({
-    time: new Date(m.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    time: new Date(m.time).toLocaleTimeString(language === "hr" ? "hr-HR" : "en-US", { hour: '2-digit', minute: '2-digit' }),
     value: Number(m.value)
   })) || [];
 
   const handleExportCsv = () => {
     if (!deviceDetails || deviceDetails.length === 0) {
-      toast.error("No data to export");
+      toast.error(t("explorer.noDataToExport"));
       return;
     }
     
@@ -91,16 +93,16 @@ export default function DataExplorerPage() {
     document.body.removeChild(link);
     
     URL.revokeObjectURL(url);
-    toast.success("CSV exported successfully");
+    toast.success(t("explorer.csvExportSuccess"));
   };
 
   return (
     <div className="h-full flex flex-col space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Data Explorer</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("explorer.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Analyze historical telemetry data and export reports.
+            {t("explorer.desc")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -112,11 +114,11 @@ export default function DataExplorerPage() {
             disabled={!deviceDetails || deviceDetails.length === 0}
           >
             <Download className="h-4 w-4" />
-            Export CSV
+            {t("explorer.exportCsv")}
           </Button>
           <Button size="sm" className="gap-2" onClick={() => window.location.reload()}>
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            {t("explorer.refresh")}
           </Button>
         </div>
       </div>
@@ -127,15 +129,15 @@ export default function DataExplorerPage() {
           <CardHeader>
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Filter className="h-4 w-4" />
-              Dataset Filters
+              {t("explorer.filtersTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Device</Label>
+              <Label>{t("explorer.deviceLabel")}</Label>
               <Select value={selectedDevice} onValueChange={(v) => setSelectedDevice(v || "")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select device" />
+                  <SelectValue placeholder={t("explorer.selectDevicePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {devices.map((d) => (
@@ -148,10 +150,10 @@ export default function DataExplorerPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Measurement</Label>
+              <Label>{t("explorer.measurementLabel")}</Label>
               <Select value={selectedField} onValueChange={(v) => setSelectedField(v || "")}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select field" />
+                  <SelectValue placeholder={t("explorer.selectFieldPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {fields.map((f: { id: string; alias: string }) => (
@@ -164,24 +166,24 @@ export default function DataExplorerPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Time Range</Label>
+              <Label>{t("explorer.timeRangeLabel")}</Label>
               <Select value={timeRange} onValueChange={(v) => setTimeRange(v || "")}>
                 <SelectTrigger>
                   <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <SelectValue placeholder="Range" />
+                  <SelectValue placeholder={t("explorer.selectRangePlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1h">Last Hour</SelectItem>
-                  <SelectItem value="6h">Last 6 Hours</SelectItem>
-                  <SelectItem value="24h">Last 24 Hours</SelectItem>
-                  <SelectItem value="7d">Last 7 Days</SelectItem>
-                  <SelectItem value="30d">Last 30 Days</SelectItem>
+                  <SelectItem value="1h">{t("explorer.lastHour")}</SelectItem>
+                  <SelectItem value="6h">{t("explorer.last6Hours")}</SelectItem>
+                  <SelectItem value="24h">{t("explorer.last24Hours")}</SelectItem>
+                  <SelectItem value="7d">{t("explorer.last7Days")}</SelectItem>
+                  <SelectItem value="30d">{t("explorer.last30Days")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="pt-4 border-t space-y-2">
-              <Label>Visualization</Label>
+              <Label>{t("explorer.visualizationLabel")}</Label>
               <div className="flex rounded-lg border p-1 bg-muted/50">
                 <button
                   onClick={() => setChartType("line")}
@@ -191,7 +193,7 @@ export default function DataExplorerPage() {
                   )}
                 >
                   <LineChartIcon className="h-3.5 w-3.5 mr-1.5" />
-                  Line
+                  {t("explorer.lineChart")}
                 </button>
                 <button
                   onClick={() => setChartType("area")}
@@ -201,7 +203,7 @@ export default function DataExplorerPage() {
                   )}
                 >
                   <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
-                  Area
+                  {t("explorer.areaChart")}
                 </button>
               </div>
             </div>
@@ -214,10 +216,16 @@ export default function DataExplorerPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg">
-                  {fields.find((f: { id: string; alias: string }) => f.id === selectedField)?.alias || "Select a field to visualize"}
+                  {fields.find((f: { id: string; alias: string }) => f.id === selectedField)?.alias || t("explorer.selectFieldToVisualize")}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  {selectedField ? `Historical trend for ${timeRange}` : "No data selected"}
+                  {selectedField ? `${t("explorer.historicalTrend")} ${
+                    timeRange === "1h" ? t("explorer.lastHour") :
+                    timeRange === "6h" ? t("explorer.last6Hours") :
+                    timeRange === "24h" ? t("explorer.last24Hours") :
+                    timeRange === "7d" ? t("explorer.last7Days") :
+                    t("explorer.last30Days")
+                  }` : t("explorer.noDataSelected")}
                 </p>
               </div>
             </div>
@@ -227,8 +235,8 @@ export default function DataExplorerPage() {
               <div className="h-full flex flex-col items-center justify-center text-center space-y-3 opacity-60">
                 <BarChart3 className="h-12 w-12 text-muted-foreground/30" />
                 <div>
-                  <p className="text-sm font-medium">No Data to Display</p>
-                  <p className="text-xs text-muted-foreground">Please select a device and a measurement field from the sidebar.</p>
+                  <p className="text-sm font-medium">{t("explorer.noDataTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("explorer.noDataDesc")}</p>
                 </div>
               </div>
             ) : (

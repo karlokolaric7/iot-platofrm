@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileDown, Languages, BookOpen, CheckCircle2 } from "lucide-react";
+import { useLanguage } from "@/context/language-context";
 
 export default function ManualPage() {
+  const { language, setLanguage } = useLanguage();
   const [lang, setLang] = useState<"en" | "hr">("en");
+
+  useEffect(() => {
+    if (language === "en" || language === "hr") {
+      setLang(language);
+    }
+  }, [language]);
+
+  const handleToggleLang = () => {
+    const nextLang = lang === "en" ? "hr" : "en";
+    setLang(nextLang);
+    setLanguage(nextLang);
+  };
 
   const handlePrint = () => {
     window.print();
@@ -71,7 +85,7 @@ export default function ManualPage() {
           <Button
             variant="outline"
             className="gap-2"
-            onClick={() => setLang(lang === "en" ? "hr" : "en")}
+            onClick={handleToggleLang}
           >
             <Languages className="h-4 w-4 text-primary" />
             {lang === "en" ? "Prevedi na Hrvatski" : "Switch to English"}

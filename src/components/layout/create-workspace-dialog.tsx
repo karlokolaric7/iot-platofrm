@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { useCreateWorkspace } from "@/hooks/use-iot-data";
 import { toast } from "sonner";
 import { Plus, Loader2 } from "lucide-react";
+import { useLanguage } from "@/context/language-context";
 
 interface CreateWorkspaceDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function CreateWorkspaceDialog({
   const router = useRouter();
   const [name, setName] = useState("");
   const createWorkspace = useCreateWorkspace();
+  const { t } = useLanguage();
 
   const slugify = (text: string) => {
     return text
@@ -43,7 +45,7 @@ export function CreateWorkspaceDialog({
     e.preventDefault();
     
     if (!name.trim()) {
-      toast.error("Please enter a workspace name");
+      toast.error(t("workspace.enterNameError"));
       return;
     }
 
@@ -55,7 +57,7 @@ export function CreateWorkspaceDialog({
         slug,
       });
       
-      toast.success("Workspace created successfully!");
+      toast.success(t("workspace.successCreate"));
       onOpenChange(false);
       setName("");
       
@@ -63,7 +65,7 @@ export function CreateWorkspaceDialog({
       router.push(`/${workspace.slug}/dashboards`);
     } catch (error: any) {
       console.error("Failed to create workspace:", error);
-      toast.error(error.message || "Failed to create workspace");
+      toast.error(error.message || t("workspace.failedCreate"));
     }
   };
 
@@ -72,26 +74,26 @@ export function CreateWorkspaceDialog({
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Create New Workspace</DialogTitle>
+            <DialogTitle className="text-xl font-bold">{t("workspace.createTitle")}</DialogTitle>
             <DialogDescription>
-              Workspaces are isolated environments for your devices, dashboards, and members.
+              {t("workspace.createDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-6">
             <div className="space-y-2">
               <Label htmlFor="name" className="text-sm font-semibold">
-                Workspace Name
+                {t("workspace.nameLabel")}
               </Label>
               <Input
                 id="name"
-                placeholder="e.g. My Smart Home"
+                placeholder={t("workspace.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
                 className="col-span-3 h-11"
               />
               <p className="text-[10px] text-muted-foreground px-1 italic">
-                URL will be: /<span className="font-mono text-primary">{slugify(name) || "slug"}</span>/dashboards
+                {t("workspace.urlPreview")} /<span className="font-mono text-primary">{slugify(name) || "slug"}</span>/dashboards
               </p>
             </div>
           </div>
@@ -102,7 +104,7 @@ export function CreateWorkspaceDialog({
               onClick={() => onOpenChange(false)}
               disabled={createWorkspace.isPending}
             >
-              Cancel
+              {t("workspace.cancel")}
             </Button>
             <Button 
               type="submit" 
@@ -112,12 +114,12 @@ export function CreateWorkspaceDialog({
               {createWorkspace.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating...
+                  {t("workspace.creatingBtn")}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4" />
-                  Create Workspace
+                  {t("workspace.createBtn")}
                 </>
               )}
             </Button>

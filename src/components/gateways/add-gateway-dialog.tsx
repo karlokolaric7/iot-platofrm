@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -34,13 +34,7 @@ import { useAddGateway } from "@/hooks/use-iot-data";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-
-const formSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(50),
-  type: z.string().min(1, "Please select a gateway type"),
-  eui: z.string().optional(),
-  description: z.string().optional(),
-});
+import { useLanguage } from "@/context/language-context";
 
 interface AddGatewayDialogProps {
   open: boolean;
@@ -52,6 +46,14 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
   const workspaceId = params.workspaceId as string;
   const addGateway = useAddGateway();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useLanguage();
+
+  const formSchema = useMemo(() => z.object({
+    name: z.string().min(2, t("gateways.validationName") || "Name must be at least 2 characters").max(50),
+    type: z.string().min(1, t("gateways.validationType") || "Please select a gateway type"),
+    eui: z.string().optional(),
+    description: z.string().optional(),
+  }), [t]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -75,12 +77,12 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
         status: "unknown",
         settings: {},
       } as any);
-      toast.success("Gateway added successfully");
+      toast.success(t("gateways.successAdd"));
       form.reset();
       onOpenChange(false);
     } catch (error: any) {
       console.error("Gateway Add Error:", error.message, error.details, error.hint, error);
-      toast.error(`Failed to add gateway: ${error.message || "Unknown error"}`);
+      toast.error(`${t("gateways.failedAdd")}: ${error.message || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,9 +92,9 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Gateway</DialogTitle>
+          <DialogTitle>{t("gateways.dialogTitle")}</DialogTitle>
           <DialogDescription>
-            Register a new gateway to connect your devices to the platform.
+            {t("gateways.dialogDesc")}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -102,9 +104,9 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
               name="name"
               render={({ field }: { field: any }) => (
                 <FormItem>
-                  <FormLabel>Gateway Name</FormLabel>
+                  <FormLabel>{t("gateways.nameLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Factory North Gateway" {...field} />
+                    <Input placeholder={t("gateways.namePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -115,11 +117,11 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
               name="type"
               render={({ field }: { field: any }) => (
                 <FormItem>
-                  <FormLabel>Type</FormLabel>
+                  <FormLabel>{t("gateways.typeLabel")}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select gateway type" />
+                        <SelectValue placeholder={t("gateways.typePlaceholder")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -138,9 +140,9 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
               name="description"
               render={({ field }: { field: any }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>{t("gateways.descLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Located on the roof of Building A" {...field} />
+                    <Input placeholder={t("gateways.descPlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,12 +153,12 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
               name="eui"
               render={({ field }: { field: any }) => (
                 <FormItem>
-                  <FormLabel>Gateway EUI (Optional)</FormLabel>
+                  <FormLabel>{t("gateways.euiLabel")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. AA0B0C0D0E0F0001" {...field} />
+                    <Input placeholder={t("gateways.euiPlaceholder")} {...field} />
                   </FormControl>
                   <FormDescription>
-                    Unique identifier for LoRaWAN gateways.
+                    {t("gateways.euiDesc")}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -169,11 +171,11 @@ export function AddGatewayDialog({ open, onOpenChange }: AddGatewayDialogProps) 
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t("gateways.cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Add Gateway
+                {t("gateways.addGateway")}
               </Button>
             </DialogFooter>
           </form>

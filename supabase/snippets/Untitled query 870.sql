@@ -1,1 +1,1 @@
-SELECT id, email FROM auth.users;
+ALTER TABLE public.workspace_members ADD CONSTRAINT workspace_members_user_id_profiles_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;

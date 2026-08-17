@@ -44,3 +44,5 @@ scratch.js
 seed.mjs
 seed-rules.sql
 tmp/
+*.log
+/supabase/.temp/

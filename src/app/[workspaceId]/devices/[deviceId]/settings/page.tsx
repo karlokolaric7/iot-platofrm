@@ -23,6 +23,7 @@ import {
 import { ArrowLeft, Save, Trash2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/language-context";
 
 export default function DeviceSettingsPage({
   params,
@@ -31,6 +32,7 @@ export default function DeviceSettingsPage({
 }) {
   const { workspaceId, deviceId } = use(params);
   const router = useRouter();
+  const { t } = useLanguage();
   
   const { data: device, isLoading } = useDevice(deviceId);
   const updateDevice = useUpdateDevice();
@@ -64,7 +66,7 @@ export default function DeviceSettingsPage({
     }
   }, [device]);
 
-  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading settings...</div>;
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">{t("deviceSettings.loading")}</div>;
   if (!device) notFound();
 
   function handleChange(field: string, value: string) {
@@ -86,27 +88,27 @@ export default function DeviceSettingsPage({
         latitude: form.latitude ? parseFloat(form.latitude) : null,
         longitude: form.longitude ? parseFloat(form.longitude) : null,
       });
-      toast.success("Device settings updated");
+      toast.success(t("deviceSettings.successUpdate"));
       router.push(`/${workspaceId}/devices/${deviceId}`);
     } catch (err: any) {
-      toast.error(err.message || "Failed to update device");
+      toast.error(err.message || t("deviceSettings.failedUpdate"));
     } finally {
       setSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (confirm("Are you sure you want to delete this device? This action cannot be undone.")) {
+    if (confirm(t("deviceSettings.confirmDelete"))) {
       try {
         await deleteDevice.mutateAsync({ 
           id: deviceId, 
           devEui: device.dev_eui, 
           workspaceId 
         });
-        toast.success("Device deleted");
+        toast.success(t("deviceSettings.successDelete"));
         router.push(`/${workspaceId}/devices`);
       } catch (err: any) {
-        toast.error(err.message || "Failed to delete device");
+        toast.error(err.message || t("deviceSettings.failedDelete"));
       }
     }
   }
@@ -121,9 +123,9 @@ export default function DeviceSettingsPage({
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Device Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("deviceSettings.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Configure metadata and connectivity for <span className="font-medium text-foreground">{device.name}</span>
+            {t("deviceSettings.desc").replace("{name}", "")} <span className="font-medium text-foreground">{device.name}</span>
           </p>
         </div>
       </div>
@@ -131,14 +133,14 @@ export default function DeviceSettingsPage({
       <form onSubmit={handleSave} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>General Information</CardTitle>
+            <CardTitle>{t("deviceSettings.generalInfo")}</CardTitle>
             <CardDescription>
-              Basic identification and metadata for your device.
+              {t("deviceSettings.generalInfoDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Device Name</Label>
+              <Label htmlFor="name">{t("deviceSettings.deviceName")}</Label>
               <Input
                 id="name"
                 value={form.name}
@@ -147,21 +149,21 @@ export default function DeviceSettingsPage({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("deviceSettings.description")}</Label>
               <Input
                 id="description"
                 value={form.description}
                 onChange={(e) => handleChange("description", e.target.value)}
-                placeholder="Describe the purpose of this device"
+                placeholder={t("deviceSettings.descriptionPlaceholder")}
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
+              <Label htmlFor="tags">{t("deviceSettings.tags")}</Label>
               <Input
                 id="tags"
                 value={form.tags}
                 onChange={(e) => handleChange("tags", e.target.value)}
-                placeholder="e.g. zone-1, production, battery-powered"
+                placeholder={t("deviceSettings.tagsPlaceholder")}
               />
             </div>
           </CardContent>
@@ -169,15 +171,15 @@ export default function DeviceSettingsPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Connectivity & Geolocation</CardTitle>
+            <CardTitle>{t("deviceSettings.connectivityGeo")}</CardTitle>
             <CardDescription>
-              Technical parameters, protocols, and physical location.
+              {t("deviceSettings.connectivityGeoDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Connectivity Protocol</Label>
+                <Label>{t("deviceSettings.connectivityProtocol")}</Label>
                 <Select
                   value={form.connectivity}
                   onValueChange={(v) => handleChange("connectivity", v || "")}
@@ -194,24 +196,24 @@ export default function DeviceSettingsPage({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="serial">Serial Number</Label>
+                <Label htmlFor="serial">{t("deviceSettings.serialNumber")}</Label>
                 <Input
                   id="serial"
                   value={form.serialNumber}
                   onChange={(e) => handleChange("serialNumber", e.target.value)}
-                  placeholder="e.g. SN-000000"
+                  placeholder={t("deviceSettings.serialNumberPlaceholder")}
                 />
               </div>
             </div>
 
             {form.connectivity === "lorawan" && (
               <div className="grid gap-2 pt-2">
-                <Label htmlFor="deveui">Device EUI</Label>
+                <Label htmlFor="deveui">{t("deviceSettings.deviceEui")}</Label>
                 <Input
                   id="deveui"
                   value={form.devEui}
                   onChange={(e) => handleChange("devEui", e.target.value)}
-                  placeholder="16-character hex string"
+                  placeholder={t("deviceSettings.deviceEuiPlaceholder")}
                   className="font-mono"
                 />
               </div>
@@ -219,25 +221,25 @@ export default function DeviceSettingsPage({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-6 mt-2">
               <div className="grid gap-2">
-                <Label htmlFor="latitude">Latitude</Label>
+                <Label htmlFor="latitude">{t("deviceSettings.latitude")}</Label>
                 <Input
                   id="latitude"
                   type="number"
                   step="any"
                   value={form.latitude}
                   onChange={(e) => handleChange("latitude", e.target.value)}
-                  placeholder="e.g. 45.8150"
+                  placeholder={t("deviceSettings.latitudePlaceholder")}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="longitude">Longitude</Label>
+                <Label htmlFor="longitude">{t("deviceSettings.longitude")}</Label>
                 <Input
                   id="longitude"
                   type="number"
                   step="any"
                   value={form.longitude}
                   onChange={(e) => handleChange("longitude", e.target.value)}
-                  placeholder="e.g. 15.9819"
+                  placeholder={t("deviceSettings.longitudePlaceholder")}
                 />
               </div>
             </div>
@@ -246,11 +248,11 @@ export default function DeviceSettingsPage({
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link href={`/${workspaceId}/devices/${deviceId}`}>
-            <Button type="button" variant="outline">Discard Changes</Button>
+            <Button type="button" variant="outline">{t("deviceSettings.discardChanges")}</Button>
           </Link>
           <Button type="submit" className="gap-2 min-w-[140px]" disabled={saving}>
             <Save className="h-4 w-4" />
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? t("deviceSettings.saving") : t("deviceSettings.saveChanges")}
           </Button>
         </div>
       </form>
@@ -259,23 +261,23 @@ export default function DeviceSettingsPage({
         <CardHeader>
           <CardTitle className="text-destructive flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            Danger Zone
+            {t("deviceSettings.dangerZone")}
           </CardTitle>
           <CardDescription>
-            Once you delete a device, there is no going back. Please be certain.
+            {t("deviceSettings.dangerZoneDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
-              <p className="text-sm font-semibold">Delete this device</p>
+              <p className="text-sm font-semibold">{t("deviceSettings.deleteTitle")}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                This will permanently delete the device, its measurements, and all associated configuration.
+                {t("deviceSettings.deleteDesc")}
               </p>
             </div>
             <Button variant="destructive" size="sm" onClick={handleDelete} className="shrink-0">
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete Device
+              {t("deviceSettings.deleteBtn")}
             </Button>
           </div>
         </CardContent>

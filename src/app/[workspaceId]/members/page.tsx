@@ -32,12 +32,13 @@ import {
 } from "@/components/ui/table";
 import { useWorkspaceMembers, useUpdateWorkspaceMemberRole, useRemoveWorkspaceMember } from "@/hooks/use-iot-data";
 import { useParams } from "next/navigation";
+import { useLanguage } from "@/context/language-context";
 
-const ROLE_CONFIG: Record<WorkspaceMember["role"], { label: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
-  owner:  { label: "Owner",  icon: Crown,   className: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  admin:  { label: "Admin",  icon: Shield,  className: "bg-primary/10 text-primary border-primary/20" },
-  member: { label: "Member", icon: Wrench,  className: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  viewer: { label: "Viewer", icon: Eye,     className: "bg-muted text-muted-foreground border-border" },
+const ROLE_CONFIG: Record<WorkspaceMember["role"], { labelKey: string; icon: React.ComponentType<{ className?: string }>; className: string }> = {
+  owner:  { labelKey: "members.roles.owner",  icon: Crown,   className: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
+  admin:  { labelKey: "members.roles.admin",  icon: Shield,  className: "bg-primary/10 text-primary border-primary/20" },
+  member: { labelKey: "members.roles.member", icon: Wrench,  className: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
+  viewer: { labelKey: "members.roles.viewer", icon: Eye,     className: "bg-muted text-muted-foreground border-border" },
 };
 
 function getInitials(name: string) {
@@ -52,6 +53,7 @@ const AVATAR_COLORS = [
 export default function MembersPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
+  const { t, language } = useLanguage();
 
   const { data: members = [], isLoading } = useWorkspaceMembers(workspaceId);
   const updateRoleMutation = useUpdateWorkspaceMemberRole();
@@ -64,7 +66,7 @@ export default function MembersPage() {
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail || !inviteEmail.includes("@")) {
-      toast.error("Please enter a valid email address");
+      toast.error(t("members.invalidEmail"));
       return;
     }
     
@@ -83,7 +85,7 @@ export default function MembersPage() {
         throw new Error(data.error || "Failed to invite user");
       }
       
-      toast.success(`Invite dispatched successfully to ${inviteEmail}`);
+      toast.success(`${t("members.inviteSuccess")} ${inviteEmail}`);
       setIsInviteOpen(false);
       setInviteEmail("");
     } catch (error: any) {
@@ -96,54 +98,54 @@ export default function MembersPage() {
   const handleRoleChange = async (memberId: string, role: string) => {
     try {
       await updateRoleMutation.mutateAsync({ memberId, role });
-      toast.success("Member role updated successfully");
+      toast.success(t("members.roleUpdateSuccess"));
     } catch (error: any) {
-      toast.error(error.message || "Failed to update member role");
+      toast.error(error.message || t("members.failedRoleUpdate"));
     }
   };
 
   const handleRemoveMember = async (memberId: string, name: string) => {
-    if (!confirm(`Are you sure you want to remove ${name} from this workspace?`)) return;
+    if (!confirm(t("members.confirmRemove").replace("{name}", name))) return;
 
     try {
       await removeMemberMutation.mutateAsync({ memberId, workspaceId });
-      toast.success(`${name} has been removed from the workspace`);
+      toast.success(`${name} ${t("members.removeSuccess")}`);
     } catch (error: any) {
-      toast.error(error.message || "Failed to remove member");
+      toast.error(error.message || t("members.failedRemove"));
     }
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground font-medium animate-pulse">Loading workspace members...</div>;
+    return <div className="p-8 text-center text-muted-foreground font-medium animate-pulse">{t("members.loading")}</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Members</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("members.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage workspace members and their access roles.
+            {t("members.desc")}
           </p>
         </div>
         <Button className="gap-2" onClick={() => setIsInviteOpen(true)}>
           <Plus className="h-4 w-4" />
-          Invite Member
+          {t("members.inviteMember")}
         </Button>
       </div>
 
       <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader className="pt-2">
-            <DialogTitle className="text-xl">Invite to Workspace</DialogTitle>
+            <DialogTitle className="text-xl">{t("members.inviteToWorkspaceTitle")}</DialogTitle>
             <DialogDescription>
-              We'll send an invite link directly to their inbox. Permissions can be assigned after they join.
+              {t("members.inviteToWorkspaceDesc")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleInvite}>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="email" className="font-semibold">Email address</Label>
+                <Label htmlFor="email" className="font-semibold">{t("members.emailLabel")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -158,15 +160,15 @@ export default function MembersPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsInviteOpen(false)}>
-                Cancel
+                {t("members.cancel")}
               </Button>
               <Button type="submit" disabled={isSending}>
                 {isSending ? (
-                  "Sending..."
+                  t("members.sending")
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Send Invite Link
+                    {t("members.sendInviteLink")}
                   </>
                 )}
               </Button>
@@ -180,6 +182,14 @@ export default function MembersPage() {
         {Object.entries(ROLE_CONFIG).map(([role, cfg]) => {
           const Icon = cfg.icon;
           const count = members.filter(m => m.role === role).length;
+          
+          // Singular or plural label lookup
+          const roleLabel = t(cfg.labelKey);
+          const pluralLabel = role === "owner" ? t("members.rolesPlural.owner") :
+                              role === "admin" ? t("members.rolesPlural.admin") :
+                              role === "member" ? t("members.rolesPlural.member") :
+                              t("members.rolesPlural.viewer");
+
           return (
             <div key={role} className="rounded-xl border bg-card p-4 flex items-center gap-3">
               <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${cfg.className}`}>
@@ -187,7 +197,7 @@ export default function MembersPage() {
               </div>
               <div>
                 <p className="text-xl font-bold">{count}</p>
-                <p className="text-xs text-muted-foreground">{cfg.label}s</p>
+                <p className="text-xs text-muted-foreground">{count === 1 ? roleLabel : pluralLabel}</p>
               </div>
             </div>
           );
@@ -199,10 +209,10 @@ export default function MembersPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              <TableHead>Member</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
+              <TableHead>{t("members.memberHead")}</TableHead>
+              <TableHead>{t("members.emailHead")}</TableHead>
+              <TableHead>{t("members.roleHead")}</TableHead>
+              <TableHead>{t("members.joinedHead")}</TableHead>
               <TableHead className="w-[50px]" />
             </TableRow>
           </TableHeader>
@@ -228,12 +238,12 @@ export default function MembersPage() {
                   <TableCell>
                     <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${cfg.className}`}>
                       <RoleIcon className="h-3 w-3" />
-                      {cfg.label}
+                      {t(cfg.labelKey)}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     <span suppressHydrationWarning>
-                      {new Date(member.joined_at).toLocaleDateString()}
+                      {new Date(member.joined_at).toLocaleDateString(language === "hr" ? "hr-HR" : "en-US")}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -244,17 +254,17 @@ export default function MembersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleRoleChange(member.id, member.role === "admin" ? "member" : "admin")}>
-                            Promote to {member.role === "admin" ? "Member" : "Admin"}
+                            {t("members.promoteTo")} {member.role === "admin" ? t("members.roles.member") : t("members.roles.admin")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleRoleChange(member.id, member.role === "viewer" ? "member" : "viewer")}>
-                            {member.role === "viewer" ? "Make Member" : "Make Viewer"}
+                            {member.role === "viewer" ? t("members.makeMember") : t("members.makeViewer")}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
                             className="text-destructive focus:text-destructive"
                             onClick={() => handleRemoveMember(member.id, name)}
                           >
-                            Remove from workspace
+                            {t("members.removeFromWorkspace")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

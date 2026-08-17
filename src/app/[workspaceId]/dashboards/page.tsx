@@ -3,14 +3,14 @@
 import { useState, use, useEffect } from "react";
 import { DeviceMap } from "@/components/dashboard/device-map";
 import { useLanguage } from "@/context/language-context";
-import { useDashboards, useDevices, useWorkspaceMeasurements, useAlerts, useHistoricalData, useWorkspaceStats } from "@/hooks/use-iot-data";
+import { useDashboards, useDevices, useWorkspaceMeasurements, useAlerts, useHistoricalData, useWorkspaceStats, useChirpstackDevices } from "@/hooks/use-iot-data";
 import { Button } from "@/components/ui/button";
 import { Plus, LayoutDashboard, Globe, Lock, Pencil, Trash2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useCreateDashboard, useDeleteDashboard } from "@/hooks/use-iot-data";
-import { cn } from "@/lib/utils";
+import { cn, isDeviceOnline } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,7 @@ export default function DashboardsPage({
   
   const { data: dashboards = [], isLoading } = useDashboards(workspaceId);
   const { data: devices = [] } = useDevices(workspaceId);
+  const { data: chirpstackData } = useChirpstackDevices();
   const { data: measurements = [], isLoading: isMeasurementsLoading } = useWorkspaceMeasurements(workspaceId);
   const { data: alerts = [], isLoading: isAlertsLoading } = useAlerts(workspaceId);
   const { data: stats } = useWorkspaceStats(workspaceId, activeTimeRange);
@@ -193,12 +194,21 @@ export default function DashboardsPage({
   }
 
   // KPI Calculations
-  const totalDevices = devices.length;
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const onlineDevices = devices.filter(d => {
-    const ls = d.last_seen || d.last_seen_at;
-    return ls && new Date(ls) > oneHourAgo;
-  }).length;
+  const filteredDevicesList = devices.filter(d => !d.name?.toLowerCase().includes("gateway"));
+
+  const processedDevices = filteredDevicesList.map(d => {
+    const csDevice = chirpstackData?.result?.find((cs: any) => cs.devEui?.toLowerCase() === d.dev_eui?.toLowerCase());
+    const mergedLastSeen = csDevice?.lastSeenAt || d.last_seen || d.last_seen_at;
+    return {
+      ...d,
+      status: (isDeviceOnline(mergedLastSeen) ? "online" : "offline"),
+      last_seen: mergedLastSeen,
+      isLive: !!csDevice
+    };
+  });
+
+  const totalDevices = processedDevices.length;
+  const onlineDevices = processedDevices.filter(d => d.status === "online").length;
   const offlineDevices = totalDevices - onlineDevices;
   const onlinePercentage = totalDevices > 0 ? Math.round((onlineDevices / totalDevices) * 100) : 0;
 
@@ -375,24 +385,24 @@ export default function DashboardsPage({
             <div className="flex items-center gap-2 mt-1">
               <span className="flex w-2 h-2 rounded-full bg-emerald-500"></span>
               <span className="text-xs font-medium text-slate-500">
-                {devices.filter(d => d.latitude).length} {language === "hr" ? "Aktivnih čvorova" : "Active Nodes"}
+                {processedDevices.filter(d => d.latitude).length} {language === "hr" ? "Aktivnih čvorova" : "Active Nodes"}
               </span>
             </div>
           </div>
-          <DeviceMap devices={devices as any} className="border-none" />
+          <DeviceMap devices={processedDevices as any} className="border-none" />
         </div>
 
         {/* KPI Grid */}
         <div className="grid grid-cols-2 gap-4 h-[320px]">
           {/* Total Devices */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-850 p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-800 transition-all duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-855 p-5 flex flex-col justify-between shadow-sm relative overflow-hidden group hover:shadow-md hover:-translate-y-1 hover:border-indigo-300 dark:hover:border-indigo-800 transition-all duration-300">
             <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-indigo-50 to-transparent dark:from-indigo-950/20 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110 duration-300"></div>
             <div className="flex justify-between items-start relative z-10">
               <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[18px]">router</span>
               </div>
               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded uppercase">
-                {devices.filter((d: any) => d.status === "online").length > 0 ? "Active" : "Stable"}
+                {processedDevices.filter((d: any) => d.status === "online").length > 0 ? "Active" : "Stable"}
               </span>
             </div>
             <div className="relative z-10">
@@ -412,7 +422,7 @@ export default function DashboardsPage({
               </div>
             </div>
             <div className="relative z-10">
-              <div className="text-3xl font-bold text-emerald-600 tracking-tight">{onlineDevices}/{totalDevices}</div>
+              <div className="text-3xl font-bold text-emerald-600 tracking-tight">{onlineDevices}</div>
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">
                 {language === "hr" ? "U MREŽI" : "ONLINE"}
               </div>
@@ -595,12 +605,12 @@ export default function DashboardsPage({
                   </div>
                 </div>
               ))
-            ) : devices.filter((d: any) => d.last_seen || d.last_seen_at).length > 0 ? (
-              devices
-                .filter((d: any) => d.last_seen || d.last_seen_at)
+            ) : processedDevices.filter((d: any) => d.last_seen).length > 0 ? (
+              processedDevices
+                .filter((d: any) => d.last_seen)
                 .slice(0, 4)
                 .map((dev: any) => {
-                  const ls = dev.last_seen || dev.last_seen_at;
+                  const ls = dev.last_seen;
                   return (
                     <div key={dev.id} className="flex gap-4 group hover:bg-slate-50/70 dark:hover:bg-slate-850/30 p-2.5 -mx-2.5 rounded-xl transition-all cursor-pointer">
                       <div className="mt-0.5">

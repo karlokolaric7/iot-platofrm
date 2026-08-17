@@ -28,7 +28,7 @@ start "IoT Dashboard Frontend" cmd /k "npm run dev"
 
 echo [4/5] Starting ngrok Tunnel
 :: Start ngrok with the configured static domain
-start "ngrok Tunnel" cmd /k "ngrok http 54321 --domain=crunchy-result-crier.ngrok-free.dev"
+start "ngrok Tunnel" cmd /k "ngrok http 54321 --url=crunchy-result-crier.ngrok-free.dev"
 echo ngrok started.
 echo.
 

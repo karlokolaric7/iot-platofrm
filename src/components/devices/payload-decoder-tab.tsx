@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/language-context";
 import { useUpsertDecoder } from "@/hooks/use-iot-data";
 
 interface PayloadDecoderTabProps {
@@ -165,6 +166,7 @@ function parseBase64(b64: string): number[] {
 }
 
 export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps) {
+  const { t } = useLanguage();
   const [code, setCode] = useState(decoder?.code ?? FALLBACK_SCRIPT);
   const [isActive, setIsActive] = useState(decoder?.is_active ?? true);
   
@@ -216,7 +218,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
     setPayloadFormat(preset.format);
     setDirty(true);
     setTestResult(null);
-    toast.success(`Applied '${preset.name}' preset`);
+    toast.success(t("decoders.appliedPreset").replace("{name}", preset.name));
   }
 
   function handleTest() {
@@ -257,10 +259,10 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
       }
 
       setTestResult({ result: cleanResult });
-      toast.success("Test executed successfully");
+      toast.success(t("decoders.testSuccess"));
     } catch (e: any) {
       setTestResult({ error: e.message || String(e) });
-      toast.error("Decoder test failed");
+      toast.error(t("decoders.testFailed"));
     }
   }
 
@@ -272,9 +274,9 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
         is_active: isActive
       });
       setDirty(false);
-      toast.success("Decoder saved successfully");
+      toast.success(t("decoders.saveSuccess"));
     } catch (err) {
-      toast.error("Failed to save decoder");
+      toast.error(t("decoders.saveFailed"));
     }
   }
 
@@ -295,10 +297,10 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
             <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/20">
               <Cpu className="h-4 w-4" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Live Decoder Debugger</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t("decoders.title")}</h3>
           </div>
           <p className="text-xs font-semibold text-slate-500">
-            Write JavaScript to translate raw binary payloads into human-readable fields.
+            {t("decoders.desc")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -312,7 +314,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
               }}
             />
             <Label htmlFor="decoder-enabled" className="cursor-pointer text-xs font-bold text-slate-600 dark:text-slate-300">
-              {isActive ? "Active" : "Disabled"}
+              {isActive ? t("decoders.active") : t("decoders.disabled")}
             </Label>
           </div>
           
@@ -320,11 +322,11 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
             <div className="flex items-center gap-2 animate-fade-in">
               <Button variant="outline" size="sm" onClick={handleReset} className="gap-2 h-9 text-xs font-bold">
                 <RotateCcw className="h-3.5 w-3.5" />
-                Reset
+                {t("decoders.reset")}
               </Button>
               <Button size="sm" onClick={handleSave} className="gap-2 h-9 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm">
                 <Save className="h-3.5 w-3.5" />
-                Save
+                {t("decoders.save")}
               </Button>
             </div>
           )}
@@ -341,7 +343,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/60">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
               <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
-              <span>Select a preset template to start:</span>
+              <span>{t("decoders.presetsTitle")}</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {DECODER_PRESETS.map((preset, idx) => (
@@ -362,11 +364,11 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
                 <Code2 className="h-4 w-4 text-slate-400" />
-                <span>JavaScript Editor</span>
+                <span>{t("decoders.jsEditor")}</span>
               </div>
               {dirty && (
                 <Badge variant="outline" className="text-[10px] font-bold px-2 py-0.5 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20 animate-pulse">
-                  Unsaved Changes
+                  {t("decoders.unsavedChanges")}
                 </Badge>
               )}
             </div>
@@ -414,7 +416,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
           <div className="bg-slate-50 dark:bg-slate-800/25 border border-slate-200/60 dark:border-slate-800/80 rounded-2xl p-4 space-y-4 flex-1 flex flex-col">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
               <Binary className="h-4 w-4 text-indigo-500" />
-              Live Test Playground
+              {t("decoders.playgroundTitle")}
             </h4>
 
             {/* Format Toggle */}
@@ -428,7 +430,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 )}
               >
-                Hex Payload
+                {t("decoders.hexPayload")}
               </button>
               <button
                 onClick={() => handleFormatChange("base64")}
@@ -439,7 +441,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 )}
               >
-                Base64 Payload
+                {t("decoders.base64Payload")}
               </button>
             </div>
 
@@ -447,9 +449,9 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
             <div className="space-y-3">
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[11px] font-bold text-slate-500">Payload Input</Label>
+                  <Label className="text-[11px] font-bold text-slate-500">{t("decoders.payloadInput")}</Label>
                   <span className="text-[10px] font-semibold text-slate-400">
-                    {payloadFormat === "hex" ? "Space-separated bytes" : "Standard Base64 string"}
+                    {payloadFormat === "hex" ? t("decoders.spaceSeparated") : t("decoders.standardBase64")}
                   </span>
                 </div>
                 <input
@@ -461,7 +463,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-bold text-slate-500">LoRaWAN FPort</Label>
+                <Label className="text-[11px] font-bold text-slate-500">{t("decoders.fPort")}</Label>
                 <input
                   type="number"
                   min="1"
@@ -479,7 +481,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                 <div className="flex items-center justify-between">
                   <Label className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
                     <Eye className="h-3.5 w-3.5 text-slate-400" />
-                    Interactive Byte Analyzer
+                    {t("decoders.byteAnalyzer")}
                   </Label>
                   <span className="text-[10px] font-bold text-indigo-500">{parsedBytes.length} bytes</span>
                 </div>
@@ -517,7 +519,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                   ) : (
                     <div className="text-[10px] text-slate-400 dark:text-slate-500 italic flex items-center justify-center h-full gap-1">
                       <HelpCircle className="h-3 w-3" />
-                      Hover over any byte above to inspect its numerical structures.
+                      {t("decoders.byteHelp")}
                     </div>
                   )}
                 </div>
@@ -530,7 +532,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
               className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700 text-white h-10 font-bold text-xs shadow-sm mt-auto"
             >
               <Play className="h-4 w-4" />
-              Run Sandbox Test
+              {t("decoders.runTest")}
             </Button>
           </div>
 
@@ -541,7 +543,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                 <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 space-y-2">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
                     <AlertCircle className="h-4 w-4" />
-                    <span>Compilation or Execution Error</span>
+                    <span>{t("decoders.executionError")}</span>
                   </div>
                   <pre className="text-xs font-mono overflow-auto max-h-28 whitespace-pre-wrap break-all text-rose-700 dark:text-rose-300/80 bg-rose-500/10 p-2 rounded-lg border border-rose-500/10">
                     {testResult.error}
@@ -551,7 +553,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Successful Decoded Output</span>
+                    <span>{t("decoders.decodedOutput")}</span>
                   </div>
                   
                   {/* Decoded Table */}
@@ -560,9 +562,9 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                       <table className="w-full border-collapse text-[11px] text-left">
                         <thead>
                           <tr className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800">
-                            <th className="p-2.5 font-bold text-slate-500">Telemetry Field</th>
-                            <th className="p-2.5 font-bold text-slate-500">Decoded Value</th>
-                            <th className="p-2.5 font-bold text-slate-500">Type</th>
+                            <th className="p-2.5 font-bold text-slate-500">{t("decoders.telemetryField")}</th>
+                            <th className="p-2.5 font-bold text-slate-500">{t("decoders.decodedValue")}</th>
+                            <th className="p-2.5 font-bold text-slate-500">{t("decoders.type")}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -587,7 +589,7 @@ export function PayloadDecoderTab({ deviceId, decoder }: PayloadDecoderTabProps)
                     </div>
                   ) : (
                     <div className="text-xs text-slate-400 italic p-2 text-center">
-                      Decoder executed successfully but returned an empty object.
+                      {t("decoders.emptyResult")}
                     </div>
                   )}
                 </div>

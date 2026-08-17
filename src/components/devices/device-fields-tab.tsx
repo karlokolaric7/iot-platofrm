@@ -33,6 +33,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { FieldType } from "@/lib/types";
+import { useLanguage } from "@/context/language-context";
 import { useAddField, useUpdateField, useDeleteField, useLatestMeasurements } from "@/hooks/use-iot-data";
 
 interface DeviceFieldsTabProps {
@@ -61,6 +62,7 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DeviceField | null>(null);
   const [form, setForm] = useState(EMPTY_FIELD);
+  const { t } = useLanguage();
 
   const addField = useAddField();
   const updateField = useUpdateField();
@@ -104,26 +106,26 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
           id: editing.id,
           ...form,
         });
-        toast.success("Field updated");
+        toast.success(t("deviceFields.successUpdate"));
       } else {
         await addField.mutateAsync({
           device_id: deviceId,
           ...form,
         });
-        toast.success("Field added");
+        toast.success(t("deviceFields.successAdd"));
       }
       setDialogOpen(false);
     } catch (err) {
-      toast.error("Failed to save field");
+      toast.error(t("deviceFields.failedSave"));
     }
   }
 
   async function handleDelete(id: string) {
     try {
       await deleteField.mutateAsync({ id, deviceId });
-      toast.success("Field removed");
+      toast.success(t("deviceFields.successDelete"));
     } catch (err) {
-      toast.error("Failed to delete field");
+      toast.error(t("deviceFields.failedDelete"));
     }
   }
 
@@ -134,7 +136,7 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
         show_on_dashboard: value,
       });
     } catch (err) {
-      toast.error("Failed to update visibility");
+      toast.error(t("deviceFields.failedVisibility"));
     }
   }
 
@@ -142,24 +144,24 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold">Custom Fields</h3>
+          <h3 className="font-semibold">{t("deviceFields.title")}</h3>
           <p className="text-sm text-muted-foreground">
-            Define the data points this device reports. Each field maps to a column in the time-series database.
+            {t("deviceFields.desc")}
           </p>
         </div>
         <Button size="sm" onClick={openAdd} className="gap-2">
           <Plus className="h-4 w-4" />
-          Add Field
+          {t("deviceFields.addField")}
         </Button>
       </div>
 
       {fields.length === 0 ? (
         <div className="rounded-xl border border-dashed py-16 text-center">
-          <p className="text-sm text-muted-foreground">No fields defined yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Add fields to start capturing data from this device.</p>
+          <p className="text-sm text-muted-foreground">{t("deviceFields.noFields")}</p>
+          <p className="text-xs text-muted-foreground mt-1">{t("deviceFields.noFieldsDesc")}</p>
           <Button size="sm" variant="outline" onClick={openAdd} className="mt-4 gap-2">
             <Plus className="h-4 w-4" />
-            Add First Field
+            {t("deviceFields.addFirstField")}
           </Button>
         </div>
       ) : (
@@ -167,12 +169,12 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
-                <TableHead>Field Name</TableHead>
-                <TableHead>Alias</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Unit</TableHead>
-                <TableHead>Last Value</TableHead>
-                <TableHead className="text-center">Show on Dashboard</TableHead>
+                <TableHead>{t("deviceFields.fieldNameHead")}</TableHead>
+                <TableHead>{t("deviceFields.aliasHead")}</TableHead>
+                <TableHead>{t("deviceFields.typeHead")}</TableHead>
+                <TableHead>{t("deviceFields.unitHead")}</TableHead>
+                <TableHead>{t("deviceFields.lastValueHead")}</TableHead>
+                <TableHead className="text-center">{t("deviceFields.showOnDashboardHead")}</TableHead>
                 <TableHead className="w-[80px]" />
               </TableRow>
             </TableHeader>
@@ -196,7 +198,15 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
                         FIELD_TYPE_COLORS[field.type as FieldType]
                       )}
                     >
-                      {field.type}
+                      {
+                        {
+                          number: t("deviceFields.typeNumber"),
+                          string: t("deviceFields.typeString"),
+                          boolean: t("deviceFields.typeBoolean"),
+                          location: t("deviceFields.typeLocation"),
+                          json: t("deviceFields.typeJson"),
+                        }[field.type as FieldType] || field.type
+                      }
                     </span>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -244,18 +254,18 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
-            <DialogTitle>{editing ? "Edit Field" : "Add Field"}</DialogTitle>
+            <DialogTitle>{editing ? t("deviceFields.editField") : t("deviceFields.addField")}</DialogTitle>
             <DialogDescription>
               {editing
-                ? "Modify this field's configuration."
-                : "Define a new data field for this device."}
+                ? t("deviceFields.editFieldDesc")
+                : t("deviceFields.addFieldDesc")}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="f-name">
-                  Field Name <span className="text-destructive">*</span>
+                  {t("deviceFields.fieldNameLabel")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="f-name"
@@ -270,11 +280,11 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
                   }
                   required
                 />
-                <p className="text-xs text-muted-foreground">lowercase, underscores</p>
+                <p className="text-xs text-muted-foreground">{t("deviceFields.fieldNameHelp")}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="f-alias">
-                  Alias / Label <span className="text-destructive">*</span>
+                  {t("deviceFields.aliasLabel")} <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="f-alias"
@@ -287,7 +297,7 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>{t("deviceFields.typeHead")}</Label>
                 <Select
                   value={form.type}
                   onValueChange={(v) => setForm((p) => ({ ...p, type: v as FieldType }))}
@@ -296,16 +306,16 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="string">String</SelectItem>
-                    <SelectItem value="boolean">Boolean</SelectItem>
-                    <SelectItem value="location">Location</SelectItem>
-                    <SelectItem value="json">JSON</SelectItem>
+                    <SelectItem value="number">{t("deviceFields.typeNumber")}</SelectItem>
+                    <SelectItem value="string">{t("deviceFields.typeString")}</SelectItem>
+                    <SelectItem value="boolean">{t("deviceFields.typeBoolean")}</SelectItem>
+                    <SelectItem value="location">{t("deviceFields.typeLocation")}</SelectItem>
+                    <SelectItem value="json">{t("deviceFields.typeJson")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="f-unit">Unit</Label>
+                <Label htmlFor="f-unit">{t("deviceFields.unitHead")}</Label>
                 <Input
                   id="f-unit"
                   placeholder="e.g. °C, %, bar"
@@ -315,7 +325,7 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="f-color">Color</Label>
+              <Label htmlFor="f-color">{t("deviceFields.colorLabel")}</Label>
               <div className="flex items-center gap-2">
                 <input
                   id="f-color"
@@ -338,16 +348,16 @@ export function DeviceFieldsTab({ deviceId, fields }: DeviceFieldsTabProps) {
                 checked={form.show_on_dashboard}
                 onCheckedChange={(v) => setForm((p) => ({ ...p, show_on_dashboard: v }))}
               />
-              <Label htmlFor="f-dashboard" className="cursor-pointer">
-                Show on device overview dashboard
+              <Label htmlFor="f-dashboard" className="cursor-pointer font-normal text-xs text-muted-foreground">
+                {t("deviceFields.showOnDashboardLabel")}
               </Label>
             </div>
             <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Cancel
+                {t("deviceFields.cancel")}
               </Button>
               <Button type="submit" disabled={!form.name || !form.alias}>
-                {editing ? "Save Changes" : "Add Field"}
+                {editing ? t("deviceFields.saveChanges") : t("deviceFields.addField")}
               </Button>
             </DialogFooter>
           </form>

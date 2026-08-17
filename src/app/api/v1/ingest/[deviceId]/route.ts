@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { executeDecoder } from '@/lib/decoder-sandbox';
 import { NextResponse } from 'next/server';
 
@@ -9,7 +9,9 @@ export async function POST(
   const { deviceId } = await params;
   
   try {
-    const supabase = await createClient();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+    const supabase = createClient(supabaseUrl, supabaseKey);
     const payload = await request.json();
 
     // 1. Fetch device and its active decoder

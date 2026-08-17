@@ -7,6 +7,7 @@ import { AddDeviceDialog } from "@/components/devices/add-device-dialog";
 import Link from "next/link";
 import { cn, isDeviceOnline } from "@/lib/utils";
 import { toast } from "sonner";
+import { useLanguage } from "@/context/language-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +27,15 @@ const STATUS_CONFIG: Record<
 };
 
 function StatusBadge({ status }: { status: Device["status"] }) {
+  const { t } = useLanguage();
   const safeStatus = status || "unknown";
   const cfg = STATUS_CONFIG[safeStatus] || STATUS_CONFIG["unknown"];
+  
+  const label = 
+    safeStatus === "online" ? t("devices.statusOnline") :
+    safeStatus === "offline" ? t("devices.statusOffline") :
+    safeStatus === "warning" ? t("devices.statusWarning") : t("devices.statusUnknown");
+
   return (
     <span
       className={cn(
@@ -37,20 +45,21 @@ function StatusBadge({ status }: { status: Device["status"] }) {
       )}
     >
       <span className={cn("w-1.5 h-1.5 rounded-full", cfg.dotClass)}></span>
-      {cfg.label}
+      {label}
     </span>
   );
 }
 
-function formatLastSeen(dateStr?: string) {
-  if (!dateStr) return "Never";
+function formatLastSeen(dateStr?: string, language?: string) {
+  const isHr = language === "hr";
+  if (!dateStr) return isHr ? "Nikada" : "Never";
   const date = new Date(dateStr);
   const now = new Date();
   const diff = Math.floor((now.getTime() - date.getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return isHr ? `prije ${diff}s` : `${diff}s ago`;
+  if (diff < 3600) return isHr ? `prije ${Math.floor(diff / 60)}m` : `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return isHr ? `prije ${Math.floor(diff / 3600)}h` : `${Math.floor(diff / 3600)}h ago`;
+  return isHr ? `prije ${Math.floor(diff / 86400)}d` : `${Math.floor(diff / 86400)}d ago`;
 }
 
 function getBatteryForDevice(device: any) {
@@ -74,6 +83,7 @@ export default function DevicesPage({
   params: Promise<{ workspaceId: string }>;
 }) {
   const { workspaceId } = use(params);
+  const { t, language } = useLanguage();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [connectivityFilter, setConnectivityFilter] = useState<string>("all");
@@ -170,9 +180,7 @@ export default function DevicesPage({
 
   const online = processedDevices.filter((d) => d.status === "online").length;
   const offline = processedDevices.filter((d) => d.status === "offline").length;
-  const warning = processedDevices.filter((d) => d.status === "warning").length;
-
-  if (error) return <div className="p-8 text-center text-rose-500">Error loading devices.</div>;
+  const warning = processedDevices.filter((d) => d.status === "warning").length;  if (error) return <div className="p-8 text-center text-rose-500">Error loading devices.</div>;
 
   const isAnyFilterActive = statusFilter !== "all" || connectivityFilter !== "all" || typeFilter !== "all" || search !== "";
 
@@ -182,25 +190,25 @@ export default function DevicesPage({
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-indigo-950 dark:text-indigo-50 mb-1">Fleet Management</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-indigo-950 dark:text-indigo-50 mb-1">{t("devices.fleetManagement")}</h1>
             <span className="inline-flex items-center gap-1 rounded bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200 dark:border-emerald-500/20 uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live Sync
+              {t("devices.liveSync")}
             </span>
           </div>
-          <p className="text-sm font-medium text-slate-500">Monitor and configure your deployed devices</p>
+          <p className="text-sm font-medium text-slate-500">{t("devices.desc")}</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm">
             <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
-            Scan Batch
+            {t("devices.scanBatch")}
           </button>
           <button 
             onClick={() => setAddOpen(true)} 
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold text-sm transition-colors shadow-sm shadow-indigo-200 dark:shadow-none"
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
-            Provision Device
+            {t("devices.provisionDevice")}
           </button>
         </div>
       </div>
@@ -212,10 +220,10 @@ export default function DevicesPage({
             <span className="material-symbols-outlined icon-fill">wifi</span>
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Online Devices</div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t("devices.onlineDevices")}</div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{online}</span>
-              <span className="text-xs font-semibold text-emerald-600">Active</span>
+              <span className="text-xs font-semibold text-emerald-600">{t("devices.active")}</span>
             </div>
           </div>
         </div>
@@ -225,10 +233,10 @@ export default function DevicesPage({
             <span className="material-symbols-outlined icon-fill">wifi_off</span>
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Offline Devices</div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t("devices.offlineDevices")}</div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{offline}</span>
-              <span className="text-xs font-semibold text-slate-500">Unreachable</span>
+              <span className="text-xs font-semibold text-slate-500">{t("devices.unreachable")}</span>
             </div>
           </div>
         </div>
@@ -238,10 +246,10 @@ export default function DevicesPage({
             <span className="material-symbols-outlined icon-fill">warning</span>
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Needs Attention</div>
+            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t("devices.needsAttention")}</div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{warning}</span>
-              <span className="text-xs font-semibold text-amber-600">Warnings</span>
+              <span className="text-xs font-semibold text-amber-600">{t("devices.warnings")}</span>
             </div>
           </div>
         </div>
@@ -253,7 +261,7 @@ export default function DevicesPage({
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
           <input 
             className="w-full bg-transparent border-none focus:ring-0 pl-10 pr-4 py-2 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none" 
-            placeholder="Search by name, EUI, or tag..." 
+            placeholder={t("devices.searchPlaceholder")} 
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -270,7 +278,7 @@ export default function DevicesPage({
             )}
           >
             <span className="material-symbols-outlined text-[18px]">filter_list</span>
-            Filters
+            {t("devices.filters")}
             {(statusFilter !== "all" || connectivityFilter !== "all" || typeFilter !== "all") && (
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-indigo-600 dark:bg-indigo-500 border border-white dark:border-slate-900 animate-pulse"></span>
             )}
@@ -281,31 +289,31 @@ export default function DevicesPage({
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 px-3 py-1.5 rounded transition-colors text-sm font-semibold outline-none">
               <span className="material-symbols-outlined text-[18px]">sort</span>
-              Sort: {
-                sortBy === "name-asc" ? "Name (A-Z)" :
-                sortBy === "name-desc" ? "Name (Z-A)" :
-                sortBy === "last-seen-desc" ? "Newest Active" :
-                sortBy === "last-seen-asc" ? "Oldest Active" :
-                sortBy === "battery-desc" ? "Battery Level" : "Default"
+              {t("devices.sort")}: {
+                sortBy === "name-asc" ? t("devices.sortNameAsc") :
+                sortBy === "name-desc" ? t("devices.sortNameDesc") :
+                sortBy === "last-seen-desc" ? t("devices.sortNewestActive") :
+                sortBy === "last-seen-asc" ? t("devices.sortOldestActive") :
+                sortBy === "battery-desc" ? t("devices.sortBatteryDesc") : t("devices.all")
               }
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setSortBy("name-asc")} className="font-medium cursor-pointer">
-                Name (A-Z)
+                {t("devices.sortNameAsc")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setSortBy("name-desc")} className="font-medium cursor-pointer">
-                Name (Z-A)
+                {t("devices.sortNameDesc")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setSortBy("last-seen-desc")} className="font-medium cursor-pointer">
-                Newest Active
+                {t("devices.sortNewestActive")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setSortBy("last-seen-asc")} className="font-medium cursor-pointer">
-                Oldest Active
+                {t("devices.sortOldestActive")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setSortBy("battery-desc")} className="font-medium cursor-pointer">
-                Battery Level (High to Low)
+                {t("devices.sortBatteryDescHigh")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -317,7 +325,7 @@ export default function DevicesPage({
         <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-5 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-2 duration-200">
           {/* Status Filter */}
           <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Status</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">{t("devices.status")}</label>
             <div className="flex flex-wrap gap-2">
               {["all", "online", "offline", "warning"].map((status) => (
                 <button
@@ -330,7 +338,10 @@ export default function DevicesPage({
                       : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                   )}
                 >
-                  {status}
+                  {status === "all" ? t("devices.all") : 
+                   status === "online" ? t("devices.statusOnline") : 
+                   status === "offline" ? t("devices.statusOffline") : 
+                   t("devices.statusWarning")}
                 </button>
               ))}
             </div>
@@ -338,7 +349,7 @@ export default function DevicesPage({
 
           {/* Connectivity Filter */}
           <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Connectivity</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">{t("devices.connectivity")}</label>
             <div className="flex flex-wrap gap-2">
               {[
                 { label: "All", value: "all" },
@@ -356,7 +367,7 @@ export default function DevicesPage({
                       : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                   )}
                 >
-                  {conn.label}
+                  {conn.label === "All" ? t("devices.all") : conn.label}
                 </button>
               ))}
             </div>
@@ -364,7 +375,7 @@ export default function DevicesPage({
 
           {/* Device Type/Brand Filter */}
           <div className="space-y-2.5">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Brand / Vendor</label>
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">{t("devices.brandVendor")}</label>
             <div className="flex flex-wrap gap-2">
               {["all", "Axioma", "Milesight", "Tektelic", "Other"].map((type) => (
                 <button
@@ -377,7 +388,7 @@ export default function DevicesPage({
                       : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                   )}
                 >
-                  {type === "all" ? "All" : type}
+                  {type === "all" ? t("devices.all") : type}
                 </button>
               ))}
             </div>
@@ -388,32 +399,36 @@ export default function DevicesPage({
       {/* Active Filter Badges */}
       {isAnyFilterActive && (
         <div className="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-900/20 px-4 py-2.5 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
-          <span className="font-semibold text-slate-500 dark:text-slate-400">Active Filters:</span>
+          <span className="font-semibold text-slate-500 dark:text-slate-400">{t("devices.activeFilters")}:</span>
           
           {search && (
             <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10">
-              Search: "{search}"
+              {t("devices.search")}: "{search}"
               <button onClick={() => setSearch("")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
             </span>
           )}
 
           {statusFilter !== "all" && (
             <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10 capitalize">
-              Status: {statusFilter}
+              {t("devices.status")}: {
+                statusFilter === "online" ? t("devices.statusOnline") : 
+                statusFilter === "offline" ? t("devices.statusOffline") : 
+                statusFilter === "warning" ? t("devices.statusWarning") : statusFilter
+              }
               <button onClick={() => setStatusFilter("all")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
             </span>
           )}
 
           {connectivityFilter !== "all" && (
             <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10 capitalize">
-              Connectivity: {connectivityFilter.replace('_', ' ')}
+              {t("devices.connectivity")}: {connectivityFilter.replace('_', ' ')}
               <button onClick={() => setConnectivityFilter("all")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
             </span>
           )}
 
           {typeFilter !== "all" && (
             <span className="inline-flex items-center gap-1 bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md font-medium border border-indigo-100 dark:border-indigo-500/10">
-              Brand: {typeFilter}
+              {t("devices.brand")}: {typeFilter}
               <button onClick={() => setTypeFilter("all")} className="hover:text-indigo-950 dark:hover:text-white font-bold ml-1">×</button>
             </span>
           )}
@@ -427,7 +442,7 @@ export default function DevicesPage({
             }}
             className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-bold ml-auto hover:underline"
           >
-            Clear All
+            {t("devices.clearAll")}
           </button>
         </div>
       )}
@@ -440,19 +455,19 @@ export default function DevicesPage({
               <th className="px-6 py-4 font-bold w-12 text-center">
                 <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
               </th>
-              <th className="px-6 py-4 font-bold">Device Name</th>
-              <th className="px-6 py-4 font-bold">Status</th>
-              <th className="px-6 py-4 font-bold">Network</th>
-              <th className="px-6 py-4 font-bold">Battery</th>
-              <th className="px-6 py-4 font-bold">Last Active</th>
-              <th className="px-6 py-4 font-bold text-right">Actions</th>
+              <th className="px-6 py-4 font-bold">{t("devices.deviceName")}</th>
+              <th className="px-6 py-4 font-bold">{t("devices.status")}</th>
+              <th className="px-6 py-4 font-bold">{t("devices.network")}</th>
+              <th className="px-6 py-4 font-bold">{t("devices.battery")}</th>
+              <th className="px-6 py-4 font-bold">{t("devices.lastActive")}</th>
+              <th className="px-6 py-4 font-bold text-right">{t("devices.actions")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
             {isLoading && (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
-                  Loading fleet data...
+                  {t("devices.loading")}
                 </td>
               </tr>
             )}
@@ -460,7 +475,7 @@ export default function DevicesPage({
             {!isLoading && sortedDevices.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-slate-500 font-medium">
-                  No devices found matching your search and filter criteria.
+                  {t("devices.noDevices")}
                 </td>
               </tr>
             )}
@@ -516,7 +531,7 @@ export default function DevicesPage({
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                    {formatLastSeen(device.last_seen || undefined)}
+                    {formatLastSeen(device.last_seen || undefined, language)}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
@@ -527,11 +542,11 @@ export default function DevicesPage({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => window.location.href = `/${workspaceId}/devices/${device.id}`} className="gap-2 cursor-pointer font-medium">
                         <span className="material-symbols-outlined text-[18px]">visibility</span>
-                        View Details
+                        {t("devices.viewDetails")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => window.location.href = `/${workspaceId}/devices/${device.id}/settings`} className="gap-2 cursor-pointer font-medium">
                         <span className="material-symbols-outlined text-[18px]">settings</span>
-                        Configure
+                        {t("devices.configure")}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -540,7 +555,7 @@ export default function DevicesPage({
                         onClick={() => handleDelete(device)}
                       >
                         <span className="material-symbols-outlined text-[18px]">delete</span>
-                        {deletingId === device.id ? "Deleting..." : "Delete Device"}
+                        {deletingId === device.id ? t("devices.deleting") : t("devices.deleteDevice")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

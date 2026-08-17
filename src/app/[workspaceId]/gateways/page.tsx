@@ -9,6 +9,7 @@ import { Plus, Radio, Wifi, WifiOff, AlertTriangle, Activity } from "lucide-reac
 import { cn, isDeviceOnline } from "@/lib/utils";
 import { AddGatewayDialog } from "@/components/gateways/add-gateway-dialog";
 import Link from "next/link";
+import { useLanguage } from "@/context/language-context";
 
 const STATUS_DOT: Record<string, string> = {
   online: "bg-emerald-500",
@@ -24,38 +25,46 @@ const STATUS_ICON: Record<string, React.ComponentType<{ className?: string }>> =
   unknown: Radio,
 };
 
-function formatLastSeen(dateStr?: string | null) {
-  if (!dateStr) return "Never";
+function formatLastSeen(dateStr?: string | null, lang: string = "en") {
+  if (!dateStr) return lang === "hr" ? "Nikada" : "Never";
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
+  if (diff < 60) return lang === "hr" ? `prije ${diff}s` : `${diff}s ago`;
+  if (diff < 3600) return lang === "hr" ? `prije ${Math.floor(diff / 60)}m` : `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return lang === "hr" ? `prije ${Math.floor(diff / 3600)}h` : `${Math.floor(diff / 3600)}h ago`;
+  return lang === "hr" ? `prije ${Math.floor(diff / 86400)}d` : `${Math.floor(diff / 86400)}d ago`;
 }
 
 export default function GatewaysPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
   const [addOpen, setAddOpen] = useState(false);
+  const { t, language } = useLanguage();
   
   const { data: gateways = [], isLoading, error } = useGateways(workspaceId);
   const { data: chirpstackData } = useChirpstackGateways();
 
   if (error) {
-    return <div className="p-8 text-center text-destructive">Error loading gateways: {(error as any).message}</div>;
+    return (
+      <div className="p-8 text-center text-destructive">
+        {t("gateways.errorLoading")}: {(error as any).message}
+      </div>
+    );
   }
 
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading gateways...</div>;
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        {t("gateways.loading")}
+      </div>
+    );
   }
 
-  // Merge ChirpStack live status
   const processedGateways = gateways.map(gw => {
     const csGateway = chirpstackData?.result?.find((cs: any) => cs.gatewayId?.toLowerCase() === gw.eui?.toLowerCase());
-    const mergedLastSeen = csGateway?.lastSeenAt || gw.last_seen;
+    const mergedLastSeen = csGateway?.lastSeenAt || null;
     return {
       ...gw,
-      status: isDeviceOnline(mergedLastSeen) ? "online" : "offline",
+      status: (csGateway && csGateway.lastSeenAt && isDeviceOnline(csGateway.lastSeenAt)) ? "online" : "offline",
       last_seen: mergedLastSeen,
       isLive: !!csGateway
     };
@@ -66,25 +75,31 @@ export default function GatewaysPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">Gateways</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("gateways.title")}</h1>
             <Badge variant="secondary" className="gap-1 font-normal text-[10px] h-5 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
               <Activity className="h-3 w-3" />
-              Live Sync Active
+              {t("gateways.liveSyncActive")}
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage LoRaWAN, MQTT, and custom gateways that relay device data.
+            {t("gateways.desc")}
           </p>
         </div>
         <Button className="gap-2" onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4" />
-          Add Gateway
+          {t("gateways.addGateway")}
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {processedGateways.map((gw) => {
           const Icon = STATUS_ICON[gw.status] || Radio;
+          const translatedStatus = gw.status === "online" 
+            ? t("devices.statusOnline") 
+            : gw.status === "warning" 
+            ? t("devices.statusWarning") 
+            : t("devices.statusOffline");
+            
           return (
             <Link
               key={gw.id}
@@ -115,20 +130,20 @@ export default function GatewaysPage() {
                   "bg-slate-400/10 text-slate-400"
                 )}>
                   <Icon className="h-3 w-3" />
-                  <span className="capitalize">{gw.status}</span>
+                  <span className="capitalize">{translatedStatus}</span>
                 </div>
               </div>
 
               <div className="space-y-2 text-sm">
                 {gw.eui && (
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground font-medium">EUI</span>
+                    <span className="text-muted-foreground font-medium">{t("gateways.eui")}</span>
                     <code className="text-xs font-mono text-primary font-bold">{gw.eui}</code>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Last Seen</span>
-                  <span className="text-xs font-medium">{formatLastSeen(gw.last_seen)}</span>
+                  <span className="text-muted-foreground">{t("gateways.lastSeen")}</span>
+                  <span className="text-xs font-medium">{formatLastSeen(gw.last_seen, language)}</span>
                 </div>
               </div>
             </Link>
@@ -140,7 +155,7 @@ export default function GatewaysPage() {
           className="flex flex-col items-center justify-center rounded-xl border border-dashed hover:border-primary hover:bg-primary/5 transition-colors py-12 gap-3 text-muted-foreground hover:text-primary"
         >
           <Plus className="h-8 w-8" />
-          <span className="text-sm font-medium">Add Gateway</span>
+          <span className="text-sm font-medium">{t("gateways.addGateway")}</span>
         </button>
       </div>
 
