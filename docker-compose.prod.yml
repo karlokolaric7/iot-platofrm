@@ -1,0 +1,122 @@
+version: "3.8"
+
+services:
+  nextjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    container_name: iot-dashboard-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - CHIRPSTACK_API_TOKEN=${CHIRPSTACK_API_TOKEN}
+      - CHIRPSTACK_API_URL=http://172.20.0.5:8080
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.10
+
+  chirpstack:
+    image: chirpstack/chirpstack:4
+    container_name: chirpstack-server
+    command: ["-c", "/etc/chirpstack"]
+    restart: unless-stopped
+    volumes:
+      - ./chirpstack/configuration/chirpstack:/etc/chirpstack
+    depends_on:
+      - postgres
+      - redis
+      - mosquitto
+    ports:
+      - "8080:8080"
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.5
+
+  chirpstack-rest-api:
+    image: chirpstack/chirpstack-rest-api:4
+    container_name: chirpstack-rest-api
+    restart: unless-stopped
+    command: ["--server", "172.20.0.5:8080", "--bind", "0.0.0.0:8090", "--insecure"]
+    ports:
+      - "8090:8090"
+    depends_on:
+      - chirpstack
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.6
+
+  chirpstack-gateway-bridge:
+    image: chirpstack/chirpstack-gateway-bridge:4
+    container_name: chirpstack-gateway-bridge
+    command: ["-c", "/etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml"]
+    restart: unless-stopped
+    ports:
+      - "1700:1700/udp"
+    volumes:
+      - ./chirpstack/configuration/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml:/etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge.toml
+    depends_on:
+      - mosquitto
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.7
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto-chirpstack
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./chirpstack/configuration/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.4
+
+  postgres:
+    image: postgres:14-alpine
+    container_name: postgres-chirpstack
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD=chirpstack
+      - POSTGRES_USER=chirpstack
+      - POSTGRES_DB=chirpstack
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./chirpstack/configuration/postgres/initdb:/docker-entrypoint-initdb.d
+      - chirpstack-postgres:/var/lib/postgresql/data
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.2
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis-chirpstack
+    command: redis-server --protected-mode no
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      chirpstack_static:
+        ipv4_address: 172.20.0.3
+
+volumes:
+  chirpstack-postgres:
+  redis-data:
+
+networks:
+  chirpstack_static:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
