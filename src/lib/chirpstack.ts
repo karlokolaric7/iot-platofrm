@@ -1,7 +1,7 @@
 // ChirpStack v4 REST API Client
 
 const CHIRPSTACK_API_URL = process.env.CHIRPSTACK_API_URL || "http://localhost:8080";
-const CHIRPSTACK_API_KEY = process.env.CHIRPSTACK_API_KEY || "";
+const CHIRPSTACK_API_KEY = process.env.CHIRPSTACK_API_KEY || process.env.CHIRPSTACK_API_TOKEN || "";
 
 async function chirpstackFetch(endpoint: string, options: RequestInit = {}) {
   const url = `${CHIRPSTACK_API_URL}/api${endpoint}`;
